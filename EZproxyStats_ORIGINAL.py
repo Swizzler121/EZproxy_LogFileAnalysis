@@ -8,6 +8,9 @@ from matplotlib import pyplot as plt
 
 IP_ACCESS_KEY = 'ipstack_access_key'
 
+#Setup Current Working Directory
+cwd = os.path.sep.join(os.path.abspath(__file__).split(os.path.sep)[:-1])
+
 ## Set up
 tdy = str(date.today())
 year = tdy[2:4]
@@ -19,18 +22,18 @@ else:
 stats = 'EZproxy_' + month + year
 stats_title = month + '/' + year
 
-statdirs = 'C:\\Statistics\\' + stats
-chartdirs = 'C:\\Statistics\\' + stats + '\\charts\\'
+statdirs = os.path.sep.join([cwd,stats])
+chartdirs = os.path.sep.join([cwd,stats,'charts'])
 
 os.makedirs(statdirs)
 os.makedirs(chartdirs)
 
-statfile = 'C:\\Statistics\\' + stats + '\\' + stats + '.csv'
-htmlfile = 'C:\\Statistics\\' + stats + '\\' + stats + '.html'
+statfile = os.path.sep.join([cwd,stats,stats + '.csv'])
+htmlfile = os.path.sep.join([cwd,stats,stats + '.html'])
 
 output = open(statfile,'w')
 
-userfile = 'C:\\Statistics\\users.csv'
+userfile = os.path.sep.join([cwd,'users.csv'])
 user_reader = csv.reader(open(userfile, 'r'))
 users = {}
 
@@ -38,7 +41,7 @@ for user_row in user_reader:
   k, v = user_row
   users[k] = v
 
-dbfile = 'C:\\Statistics\\dblist.csv'
+dbfile = os.path.sep.join([cwd,'dblist.csv'])
 db_reader = csv.reader(open(dbfile, 'r'))
 dbs = {}
 
@@ -53,7 +56,7 @@ months = {'January': 1, 'February': 2, 'March': 3, 'April': 4, 'May': 5, 'June':
 
 output.write('Date,Weekday,Hour,Country,State,City,Location,Status,Requested_url,Referring_url')
 
-ezproxy_logs = 'C:\\Statistics\\ezproxy_logs\\'
+ezproxy_logs = os.path.sep.join([cwd,'ezproxy_logs'])
 ezproxy_stats = []
 
 ## Mine stats from EZproxy logfiles

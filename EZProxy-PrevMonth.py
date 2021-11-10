@@ -4,6 +4,9 @@ import csv
 import pandas as pd
 from matplotlib import pyplot as plt
 
+#Setup Current Working Directory
+cwd = os.path.sep.join(os.path.abspath(__file__).split(os.path.sep)[:-1])
+
 ## Get the date
 tdy = str(date.today())
 year = tdy[2:4]
@@ -19,22 +22,22 @@ stats = 'EZproxy_' + month + year
 stats_title = month + '/' + year
 
 # Location of directories to create for report files
-statdirs = 'C:\\Statistics\\' + stats
-chartdirs = 'C:\\Statistics\\' + stats + '\\charts\\'
+statdirs = os.path.sep.join([cwd,stats])
+chartdirs = os.path.sep.join([cwd,stats,'charts'])
 
 # Create the directories for report files
 os.makedirs(statdirs)
 os.makedirs(chartdirs)
 
 # Create files for report file and pretty log
-statfile = 'C:\\Statistics\\' + stats + '\\' + stats + '.csv'
-htmlfile = 'C:\\Statistics\\' + stats + '\\' + stats + '.html'
+statfile = os.path.sep.join([cwd,stats,stats + '.csv'])
+htmlfile = os.path.sep.join([cwd,stats,stats + '.html'])
 
 # Open statfile to unpack
 output = open(statfile,'w')
 
 # Find userfile and open
-userfile = 'C:\\Statistics\\users.csv'
+userfile = os.path.sep.join([cwd,'users.csv'])
 user_reader = csv.reader(open(userfile, 'r'))
 
 # Create user array
@@ -46,7 +49,7 @@ for user_row in user_reader:
   users[k] = v
 
 # Find database file and open
-dbfile = 'C:\\Statistics\\dblist.csv'
+dbfile = os.path.sep.join([cwd,'dblist.csv'])
 db_reader = csv.reader(open(dbfile, 'r'))
 
 # Create database array
@@ -68,7 +71,7 @@ months = {'Jan': 1, 'Feb': 2, 'Mar': 3, 'Apr': 4, 'May': 5, 'Jun': 6, 'Jul': 7, 
 output.write('Date,Weekday,Hour,IP,Location,Requested_url')
 
 # Find the EZProxy log folder to analyze files
-ezproxy_logs = 'C:\\Statistics\\ezproxy_logs\\'
+ezproxy_logs = os.path.sep.join([cwd,'ezproxy_logs'])
 ezproxy_stats = []
 
 ## Unpack stats from EZproxy logfiles
@@ -148,22 +151,22 @@ html.write(str(ip_count) + '<br><br></div>')
 byday = df.groupby('Date').Weekday.count().reset_index()
 byday = byday.sort_index(ascending=True)
 byday.rename(columns={'Date':'Date', 'Weekday':'Sessions'},inplace=True)
-byday['Percent'] = byday.Sessions / byday.Sessions.sum()
-byday.Percent = byday.Percent.apply(lambda x: str(x)[2:4] + '.' + str(x)[4] + '%')
+#byday['Percent'] = byday.Sessions / byday.Sessions.sum()
+#byday.Percent = byday.Percent.apply(lambda x: str(x)[2:4] + '.' + str(x)[4] + '%')
 day_keys = byday.Date.tolist()
 day_values = byday.Sessions.tolist()
 title1 = 'EZproxy Sessions by Day of Month'
 
-plt.figure(figsize = (8,6))
-ax1 = plt.subplot()
-plt.barh(range(len(day_values)), day_values, align='center', alpha=0.5, color='#641E16')
-ax1.set_yticks(range(len(day_keys)))
-ax1.set_yticklabels(day_keys)
-ax1.set_xlabel('EZproxy Sessions')
-plt.tight_layout()
-plt.subplots_adjust(top=0.88)
-plt.title(title1)
-plt.savefig(chartdirs + 'byday.png')
+#plt.figure(figsize = (8,6))
+#ax1 = plt.subplot()
+#plt.barh(range(len(day_values)), day_values, align='center', alpha=0.5, color='#641E16')
+#ax1.set_yticks(range(len(day_keys)))
+#ax1.set_yticklabels(day_keys)
+#ax1.set_xlabel('EZproxy Sessions')
+#plt.tight_layout()
+#plt.subplots_adjust(top=0.88)
+#plt.title(title1)
+#plt.savefig(chartdirs + 'byday.png')
 
 html.write('<div class="row"><center><h2>' + title1 + '</h2><img src="charts/byday.png" /><br><br><br>')
 html.write(byday.to_html() + '<br><br></div>')
@@ -173,22 +176,22 @@ days = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday']
 byweekday = df.groupby('Weekday').Date.count().reindex(days).reset_index()
 byweekday = byweekday.sort_index(ascending=True)
 byweekday.rename(columns={'Weekday':'Weekday', 'Date':'Sessions'},inplace=True)
-byweekday['Percent'] = byweekday.Sessions / byweekday.Sessions.sum()
-byweekday.Percent = byweekday.Percent.apply(lambda x: str(x)[2:4] + '.' + str(x)[4] + '%')
+#byweekday['Percent'] = byweekday.Sessions / byweekday.Sessions.sum()
+#byweekday.Percent = byweekday.Percent.apply(lambda x: str(x)[2:4] + '.' + str(x)[4] + '%')
 weekday_keys = byweekday.Weekday.tolist()
 weekday_values = byweekday.Sessions.tolist()
 title2 = 'EZproxy Sessions by Weekday'
 
-plt.figure(figsize = (8,6))
-ax2 = plt.subplot()
-plt.barh(range(len(weekday_values)), weekday_values, align='center', alpha=0.5, color='#4A235A')
-ax2.set_yticks(range(len(weekday_keys)))
-ax2.set_yticklabels(weekday_keys)
-ax2.set_xlabel('EZproxy Sessions')
-plt.tight_layout()
-plt.subplots_adjust(top=0.88)
-plt.title(title2)
-plt.savefig(chartdirs + 'byweekday.png')
+#plt.figure(figsize = (8,6))
+#ax2 = plt.subplot()
+#plt.barh(range(len(weekday_values)), weekday_values, align='center', alpha=0.5, color='#4A235A')
+#ax2.set_yticks(range(len(weekday_keys)))
+#ax2.set_yticklabels(weekday_keys)
+#ax2.set_xlabel('EZproxy Sessions')
+#plt.tight_layout()
+#plt.subplots_adjust(top=0.88)
+#plt.title(title2)
+#plt.savefig(chartdirs + 'byweekday.png')
 
 html.write('<div class="row"><center><h2>' + title2 + '</h2><img src="charts/byweekday.png" /><br><br><br>')
 html.write(byweekday.to_html() + '<br><br></div>')
@@ -197,22 +200,22 @@ html.write(byweekday.to_html() + '<br><br></div>')
 byhour = df.groupby('Hour').Date.count().reset_index()
 byhour = byhour.sort_index(ascending=True)
 byhour.rename(columns={'Hour':'Hour', 'Date':'Sessions'},inplace=True)
-byhour['Percent'] = byhour.Sessions / byhour.Sessions.sum()
-byhour.Percent = byhour.Percent.apply(lambda x: str(x)[2:4] + '.' + str(x)[4] + '%')
+#byhour['Percent'] = byhour.Sessions / byhour.Sessions.sum()
+#byhour.Percent = byhour.Percent.apply(lambda x: str(x)[2:4] + '.' + str(x)[4] + '%')
 hour_keys = byhour.Hour.tolist()
 hour_values = byhour.Sessions.tolist()
 title3 = 'EZproxy Sessions by Hour'
 
-plt.figure(figsize = (8,6))
-ax3 = plt.subplot()
-plt.barh(range(len(hour_values)), hour_values, align='center', alpha=0.5, color='#154360')
-ax3.set_yticks(range(len(hour_keys)))
-ax3.set_yticklabels(hour_keys)
-ax3.set_xlabel('EZproxy Sessions')
-plt.tight_layout()
-plt.subplots_adjust(top=0.88)
-plt.title(title3)
-plt.savefig(chartdirs + 'byhour.png')
+#plt.figure(figsize = (8,6))
+#ax3 = plt.subplot()
+#plt.barh(range(len(hour_values)), hour_values, align='center', alpha=0.5, color='#154360')
+#ax3.set_yticks(range(len(hour_keys)))
+#ax3.set_yticklabels(hour_keys)
+#ax3.set_xlabel('EZproxy Sessions')
+#plt.tight_layout()
+#plt.subplots_adjust(top=0.88)
+#plt.title(title3)
+#plt.savefig(chartdirs + 'byhour.png')
 
 html.write('<div class="row"><center><h2>' + title3 + '</h2><img src="charts/byhour.png" /><br><br><br>')
 html.write(byhour.to_html() + '<br><br></div>')
@@ -227,22 +230,22 @@ html.write(byhour.to_html() + '<br><br></div>')
 bylocation = df.groupby('Location').Date.count().reset_index()
 bylocation = bylocation.sort_values('Date',ascending=False)
 bylocation.rename(columns={'Location':'Location', 'Date':'Sessions'},inplace=True)
-bylocation['Percent'] = bylocation.Sessions / bylocation.Sessions.sum()
-bylocation.Percent = bylocation.Percent.apply(lambda x: str(x)[2:4] + '.' + str(x)[4] + '%')
+#bylocation['Percent'] = bylocation.Sessions / bylocation.Sessions.sum()
+#bylocation.Percent = bylocation.Percent.apply(lambda x: str(x)[2:4] + '.' + str(x)[4] + '%')
 location_keys = bylocation.Location.tolist()
 location_values = bylocation.Sessions.tolist()
 title7 = 'EZproxy Sessions by Location'
 
-plt.figure(figsize = (8,6))
-ax7 = plt.subplot()
-plt.barh(range(len(location_values)), location_values, align='center', alpha=0.5, color='#34495E')
-ax7.set_yticks(range(len(location_keys)))
-ax7.set_yticklabels(location_keys)
-ax7.set_xlabel('EZproxy Sessions')
-plt.tight_layout()
-plt.subplots_adjust(top=0.88)
-plt.title(title7)
-plt.savefig(chartdirs + 'bylocation.png')
+#plt.figure(figsize = (8,6))
+#ax7 = plt.subplot()
+#plt.barh(range(len(location_values)), location_values, align='center', alpha=0.5, color='#34495E')
+#ax7.set_yticks(range(len(location_keys)))
+#ax7.set_yticklabels(location_keys)
+#ax7.set_xlabel('EZproxy Sessions')
+#plt.tight_layout()
+#plt.subplots_adjust(top=0.88)
+#plt.title(title7)
+#plt.savefig(chartdirs + 'bylocation.png')
 
 html.write('<div class="row"><center><h2>' + title7 + '</h2><img src="charts/bylocation.png" /><br><br><br>')
 html.write(bylocation.to_html() + '<br><br></div>')
@@ -253,22 +256,22 @@ html.write(bylocation.to_html() + '<br><br></div>')
 req_urls = df.groupby('Requested_url').Date.count().reset_index()
 req_urls = req_urls.sort_values('Date',ascending=False)
 req_urls.rename(columns={'Requested_url':'Requested_url', 'Date':'Sessions'},inplace=True)
-req_urls['Percent'] = req_urls.Sessions / req_urls.Sessions.sum()
-req_urls.Percent = req_urls.Percent.apply(lambda x: str(x)[2:4] + '.' + str(x)[4] + '%')
+#req_urls['Percent'] = req_urls.Sessions / req_urls.Sessions.sum()
+#req_urls.Percent = req_urls.Percent.apply(lambda x: str(x)[2:4] + '.' + str(x)[4] + '%')
 req_keys = req_urls.Requested_url.tolist()
 req_values = req_urls.Sessions.tolist()
 title9 = 'Requested URLs'
 
-plt.figure(figsize = (8,6))
-ax9 = plt.subplot()
-plt.barh(range(len(req_values)), req_values, align='center', alpha=0.5, color='#F1948A')
-ax9.set_yticks(range(len(req_keys)))
-ax9.set_yticklabels(req_keys)
-ax9.set_xlabel('EZproxy Sessions')
-plt.tight_layout()
-plt.subplots_adjust(top=0.88)
-plt.title(title9)
-plt.savefig(chartdirs + 'req.png')
+#plt.figure(figsize = (8,6))
+#ax9 = plt.subplot()
+#plt.barh(range(len(req_values)), req_values, align='center', alpha=0.5, color='#F1948A')
+#ax9.set_yticks(range(len(req_keys)))
+#ax9.set_yticklabels(req_keys)
+#ax9.set_xlabel('EZproxy Sessions')
+#plt.tight_layout()
+#plt.subplots_adjust(top=0.88)
+#plt.title(title9)
+#plt.savefig(chartdirs + 'req.png')
 
 html.write('<div class="row"><center><h2>' + title9 + '</h2><br><img src="charts/req.png" /><br>')
 html.write(req_urls.to_html() + '<br><br></div>')

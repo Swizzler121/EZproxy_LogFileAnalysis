@@ -4,6 +4,9 @@ import csv
 import pandas as pd
 from matplotlib import pyplot as plt
 
+#Setup Current Working Directory
+cwd = os.path.sep.join(os.path.abspath(__file__).split(os.path.sep)[:-1])
+
 ## Get the date
 tdy = str(date.today())
 year = tdy[2:4]
@@ -18,22 +21,22 @@ stats = 'EZproxy_20' + year
 stats_title = '20' + year + ' YTD'
 
 # Location of directories to create for report files
-statdirs = 'C:\\Statistics\\' + stats
-chartdirs = 'C:\\Statistics\\' + stats + '\\charts\\'
+statdirs = os.path.sep.join([cwd,stats])
+chartdirs = os.path.sep.join([cwd,stats,'charts'])
 
 # Create the directories for report files
 os.makedirs(statdirs)
 os.makedirs(chartdirs)
 
 # Create files for report file and pretty log
-statfile = 'C:\\Statistics\\' + stats + '\\' + stats + '.csv'
-htmlfile = 'C:\\Statistics\\' + stats + '\\' + stats + '.html'
+statfile = os.path.sep.join([cwd,stats,stats + '.csv'])
+htmlfile = os.path.sep.join([cwd,stats,stats + '.html'])
 
 # Open statfile to unpack
 output = open(statfile,'w')
 
 # Find userfile and open
-userfile = 'C:\\Statistics\\users.csv'
+userfile = os.path.sep.join([cwd,'users.csv'])
 user_reader = csv.reader(open(userfile, 'r'))
 users = {}
 
@@ -44,7 +47,7 @@ for user_row in user_reader:
   users[k] = v
 
 # Find database file and open
-dbfile = 'C:\\Statistics\\dblist.csv'
+dbfile = os.path.sep.join([cwd,'dblist.csv'])
 db_reader = csv.reader(open(dbfile, 'r'))
 
 # Create database array
@@ -66,7 +69,7 @@ months = {'Jan': 1, 'Feb': 2, 'Mar': 3, 'Apr': 4, 'May': 5, 'Jun': 6, 'Jul': 7, 
 output.write('Date,Weekday,Hour,IP,Location,Requested_url')
 
 # Find the EZProxy log folder to unpack
-ezproxy_logs = 'C:\\Statistics\\ezproxy_logs\\'
+ezproxy_logs = os.path.sep.join([cwd,'ezproxy_logs'])
 ezproxy_stats = []
 
 ## Unpack stats from EZproxy logfiles
