@@ -17,8 +17,8 @@ else:
   month = str(m)
 
 # Create variables for filenames and titles
-stats = 'EZproxy_20' + year
-stats_title = '20' + year + ' YTD'
+stats = f"EZproxy_20{year}"
+stats_title = f"20{year} {YTD}"
 
 # Location of directories to create for report files
 statdirs = os.path.sep.join([cwd,stats])
