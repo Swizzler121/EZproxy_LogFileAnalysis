@@ -12,6 +12,9 @@ cwd = os.path.sep.join(os.path.abspath(__file__).split(os.path.sep)[:-1])
 spufolder = config["required"]["EZProxyLogFolderName"] #look at the config file and fetch the name of the log folder assign it to a variable
 ##### Global Variables and definitions End #####
 
+#Scan the spufolder and create a range of valid dates to check the arguements against
+print(os.listdir(os.path.join(cwd,spufolder)))
+
 #Section Listens for any CLI arguements and determines mode to start in
 parser = argparse.ArgumentParser(
 	formatter_class=argparse.RawDescriptionHelpFormatter, #lets me set the indents and returns for the help description
@@ -33,8 +36,6 @@ parser.add_argument("-y", "--year", type=lambda d: datetime.strptime(d, '%Y'), h
 #listen for a year argument and use lamda and strptime to determine if it is a valid month (between 1-12)
 parser.add_argument("-m","--month", type=lambda d: datetime.strptime(d, '%m'), help="specify a month (integer)")
 args = parser.parse_args()
-
-print (spufolder)
 
 if args.year:
     print("year specified")
