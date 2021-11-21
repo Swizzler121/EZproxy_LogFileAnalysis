@@ -1,39 +1,46 @@
 #!/usr/bin/env python3
 import os, argparse #os is used for directory navigation, argparse for listening for cli arguements
-from datetime import date, timedelta
+import yaml #yaml is used to read the config file
+from datetime import date, datetime, timedelta
 
-##### Global Variables Start #####
+##### Global Variables and definitions Start #####
+#open config file safely so it does not allow for code injection, assign it the variable config
+with open('config.yml', "r") as f:
+	config = yaml.safe_load(f)
 #Setup Current Working Directory
 cwd = os.path.sep.join(os.path.abspath(__file__).split(os.path.sep)[:-1])
-
-##### Global Variables End #####
-
-#Section reads config file and determines parameters such as if to listen for usernames, where to find log files, etc
-
-####TODO####
+spufolder = config["required"]["EZProxyLogFolderName"] #look at the config file and fetch the name of the log folder assign it to a variable
+##### Global Variables and definitions End #####
 
 #Section Listens for any CLI arguements and determines mode to start in
-parser = argparse.ArgumentParser()
-parser.add_argument("-y", "--year", help="specify a year to calculate stats from")
-parser.add_argument("-m","--month", help="specify a month to calculate stats from")
+parser = argparse.ArgumentParser(
+	formatter_class=argparse.RawDescriptionHelpFormatter, #lets me set the indents and returns for the help description
+	#help description, the weird symbols are ANSI escape codes that change the colors of the text
+	description='''\
+	\033[93mPlease edit the config.ini file before running the script for the first time\033[00m
+
+	This script analyzes EZProxy SPU logs and has multiple modes. 
+	==============================================================
+	\033[92m*\033[00m If no arguements are specified, it will run stats for the previous month
+	\033[92m*\033[00m If only a year is specified, it will run stats for the whole year
+	\033[92m*\033[00m If only a month is specified, it will run stats for that month 
+	\033[92m*\033[00m If both a year and month are specified, it will run for the date specified. 
+
+\033[91m	Corresponding SPU log file(s) must exist in the EZProxy log folder to run stats for a time period!\033[00m
+		''')
+#listen for a year argument and use lambda and strptime to determine if it is a valid year (between 0-9999)
+parser.add_argument("-y", "--year", type=lambda d: datetime.strptime(d, '%Y'), help="specify a year")
+#listen for a year argument and use lamda and strptime to determine if it is a valid month (between 1-12)
+parser.add_argument("-m","--month", type=lambda d: datetime.strptime(d, '%m'), help="specify a month (integer)")
 args = parser.parse_args()
+
+print (spufolder)
+
 if args.year:
     print("year specified")
+    print("EZproxy_" + args.year.strftime("%Y"))
 #    print("EZproxy_",datetime.date.today().replace(day=1) - datetime.timedelta(days=1))
-    print(date.today().month)
-
-#    if len(sys.argv) >= 2: #Counts the number of arguements, currently the script only looks at the 1st arguement after the script, but it won't error out when more are included, it just doesn't pay attention to them.
-#        if len(sys.argv[1]) == 2: #check the length of a given argument, if 2 characters are detected,its assumed to be a month
-#            print("The script has detected a month")
-            #date.month(sys.argv[1]) <--not working
-            #print("EZproxy_",sys.argv[1],datetime.today().year)
-#        elif len(sys.argv[1]) == 4: #check the length of a given argument, if 4 characters are detected,its assumed to be a year
-#            print("the script has detected a year")
-#        else
-#            print("Invalid arguement detected, please enter a month - MM or a year - YYYY")
-#    else: #if no valid argument is detected, run script for last month
-#    else
-#        print("no arguements were detected or an invalid arguement was detected")
-        #print("EZproxy_",datetime.date.today().replace(day=1) - datetime.timedelta(days=1))
-
-#currently fails with no arguement because it throws an out of index error as it's looking for argv 1, look for a better way to handle this
+    print(date.today().month) #just messing with how to count back a month
+elif args.month:
+	print("Month specified")
+	print("EZproxy_" + args.month.strftime("%m"))
