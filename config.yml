@@ -11,7 +11,7 @@ flags: #optional flags to turn features on and off
 
 optional: #general values that you aren't required to change before use
   resource_list: dblist.csv #name of your domain list .csv file see github for instructions on creating this.
-  spulog_name_scheme: spuYYYYMM.log #future proofing in case name scheme of log changes
+  spulog_name_scheme: spu$year$month.log #future proofing in case name scheme of log changes
   output_folder: output #folder where results will output to, will be created on run if it does not exist
   error_log: ezp-stats.log #file where logs will output to, will be created on run if it does not exist
 

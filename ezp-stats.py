@@ -2,6 +2,7 @@
 import logging #logging is used to generate a logfile
 import os, argparse #os is used for directory navigation, argparse for listening for cli arguments
 import yaml #yaml is used to read the config file
+from string import Template #used for templating things like the log file name.
 from datetime import date, datetime, timedelta
 
 ##### Global Variables and definitions Start #####
@@ -21,6 +22,7 @@ else:
 	logging.getLogger().disabled = True
 
 spufolder = config["required"]["ezproxy_spulog_folder"]
+spu = Template(config["optional"]["spulog_name_scheme"])
 outputfolder = config["optional"]["output_folder"]
 brandfolder =  config["branding"]["brand_folder"]
 #TODO - look at the config spulog naming scheme and set the logfile name variable
@@ -54,14 +56,14 @@ args = parser.parse_args()
 
 if (args.year and args.month):
     logging.debug("both year and month specified")
-    print(f'spu{args.year.strftime("%Y")}{args.month.strftime("%m")}.log')
+    print(spu.substitute(year=args.year.strftime("%Y"), month=args.month.strftime("%m")))
 elif args.year:
 	#TODO - figure out how whole-year logfile processing will work
 	logging.debug("Year specified")
 	print("EZproxy_" + args.year.strftime("%Y"))
 elif args.month:
 	logging.debug("Month specified")
-	print(f'spu{str(datetime.today().replace(day=1) - timedelta(days=1))[0:4]}{args.month.strftime("%m")}.log') #calculates the day, then uses timedelta to move to the last day of the previous month, then I use a string index to specify just the current year minus a month, and append the month from the argument
+	print(spu.substitue(year=str(datetime.today().replace(day=1) - timedelta(days=1))[0:4], month=args.month.strftime("%m")) #calculates the day, then uses timedelta to move to the last day of the previous month, then I use a string index to specify just the current year minus a month, and append the month from the argument
 else:
 	logging.debug("No arguments specified")
-	print(f'spu{str(datetime.today().replace(day=1) - timedelta(days=1))[0:7].replace("-","")}.log') #calculates the day, then uses timedelta to move to the last day of the previous month, then I use a string index to specify just the year and month out of the timecode and use replace to remove the dash
+	print(spu.substitute(year=str(datetime.today().replace(day=1) - timedelta(days=1))[0:4], month=str(datetime.today().replace(day=1) - timedelta(days=1))[5:7]))#calculates the day, then uses timedelta to move to the last day of the previous month, then I use a string index to specify just the year and month out of the timecode and seperate them into individual template values
