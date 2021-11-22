@@ -1,29 +1,30 @@
-required: #you must create this folder and modify this value before running the script
-  EZProxyLogFolderName: spu_logs #name of the SPU Log folder, must be in the ezp-stats program folder, I reccomend creating a symbolic link to the folder in the ezp-stats program folder
+required: #you locate this folder and modify this value before running the script
+  ezproxy_spulog_folder: spu_logs #location of the SPU Log folder, program must have read access to the folder.
 
 flags: #optional flags to turn features on and off
-  UseResourceList: false #Use a list of domains to make the resource names prettier
-  GenerateCharts: true #enable or disable charts in result pdf
-  DoBranding: false #enable or disable branding in result pdf
-  GeneratePDF: true #enable or disable the result pdf (only csv results)
-  GenerateLog: true #enable or disable a logfile being generated
-  UseLogins: false #Use proxy logins in stats (currently not implimented)
+  do_logging: true #enable or disable a logfile being written
+  use_resource_list: false #Use a list of domains to make the resource names prettier
+  generate_charts: true #enable or disable charts in result pdf
+  do_branding: false #enable or disable branding in result pdf
+  generate_pdf: true #enable or disable the result pdf (only csv results)
+  use_logins: false #Use proxy logins in stats (currently not implimented)
 
 optional: #general values that you aren't required to change before use
-  ResourceList: dblist.csv #name of your domain list .csv file see github for instructions on creating this.
-  OutputFolderName: output #folder where results will output to, will be created on run
-  LogFolderName: logs #folder where logs will output to, will be created on run
+  resource_list: dblist.csv #name of your domain list .csv file see github for instructions on creating this.
+  spulog_name_scheme: spuYYYYMM.log #future proofing in case name scheme of log changes
+  output_folder: output #folder where results will output to, will be created on run if it does not exist
+  error_log: ezp-stats.log #file where logs will output to, will be created on run if it does not exist
+
+##########
+#RESERVED#  -Not ready yet
+##########
 
 branding:
-  OrgName: 'Public Library' #name of your organization, used in result PDF
-  AccentColor: '#00bef2' #decorates the PDF with a chosen accent color
-  BrandFolder: branding #folder where logos are fetched from
-  BigLogo: biglogo.png #logo that is placed on the cover of the result pdf
-  PageLogo: pagelogo.png #logo that is placed on each page of the result pdf
-
-##########
-#RESERVED#  -Not Ready Yet
-##########
+  org_name: 'Public Library' #name of your organization, used in result PDF
+  accent_color: '#00bef2' #decorates the PDF with a chosen accent color
+  brand_folder: branding #folder where logos are fetched from
+  big_logo: biglogo.png #logo that is placed on the cover of the result pdf
+  page_logo: pagelogo.png #logo that is placed on each page of the result pdf
 
 #pages: #pages to render in result pdf and their order
 #- cover
@@ -31,7 +32,7 @@ branding:
 #- user_stats
 #- usage_times
 
-#koha-sip2:
+#koha_sip2:
 #  address: 127.0.0.1
 #  username: null
 #  password: null
