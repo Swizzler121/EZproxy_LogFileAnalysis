@@ -2,7 +2,8 @@ required: #you locate this folder and modify this value before running the scrip
   ezproxy_spulog_folder: spu_logs #location of the SPU Log folder, program must have read access to the folder.
 
 flags: #optional flags to turn features on and off
-  do_logging: true #enable or disable a logfile being written
+  do_debug_log: true #enable or disable a logfile being written
+  append_debug_log: true #if true, appends new logs to existing file, if false, creates a new log file each run
   use_resource_list: false #Use a list of domains to make the resource names prettier
   generate_charts: true #enable or disable charts in result pdf
   do_branding: false #enable or disable branding in result pdf
@@ -14,7 +15,7 @@ optional: #general values that you aren't required to change before use
   spulog_name_scheme: spu$year$month.log #future proofing in case name scheme of log changes
   output_folder: output #folder where results will output to, will be created on run if it does not exist
   output_file_prefix: ezpstat #prefix before date of output stat file
-  error_log: ezp-stats.log #file where logs will output to, will be created on run if it does not exist
+  debug_log: ezp-stats #file where logs will output to, will be created on run if it does not exist
   timezone: America/Chicago #Timezone to use, get codes from TZ Database name here: https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
 
 ##########

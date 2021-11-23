@@ -13,13 +13,21 @@ with open('config.yml', "r") as f:
 	config = yaml.safe_load(f)
 #cwd = os.path.sep.join(os.path.abspath(__file__).split(os.path.sep)[:-1]) #Setup Current Working Directory #deleteme maybe? not used?
 #look at the config file and fetch the name and location of the diagnostic log file, spulog folder, and output log folder,
-if config["flags"]["do_logging"] == True: #check the config file to see if logging is disabled, and disable it if this is the case
-	logging.basicConfig(
-		filename=config["optional"]["error_log"], 
-		encoding='utf-8', 
-		format='%(asctime)s %(levelname)-8s %(message)s',
-		level=logging.DEBUG,
-		datefmt='%Y-%m-%d %H:%M:%S')
+if config["flags"]["do_debug_log"] == True: #check the config file to see if logging is disabled, and disable it if this is the case
+	if not config["flags"]["append_debug_log"] == True:
+		logging.basicConfig(
+			filename=f'{config["optional"]["debug_log"]}{arrow.now()}.log', 
+			encoding='utf-8', 
+			format='%(asctime)s %(levelname)-8s %(message)s',
+			level=logging.DEBUG,
+			datefmt='%Y-%m-%d %H:%M:%S')
+	else: 
+		logging.basicConfig(
+			filename=f'{config["optional"]["debug_log"]}.log', 
+			encoding='utf-8', 
+			format='%(asctime)s %(levelname)-8s %(message)s',
+			level=logging.DEBUG,
+			datefmt='%Y-%m-%d %H:%M:%S')
 else:
 	logging.getLogger().disabled = True
 try: #Log wrapper that will record any error exceptions in the log
