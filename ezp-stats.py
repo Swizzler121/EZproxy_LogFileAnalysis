@@ -15,15 +15,11 @@ with open('config.yml', "r") as f:
 #look at the config file and fetch the name and location of the diagnostic log file, spulog folder, and output log folder,
 if config["flags"]["do_debug_log"] == True: #check the config file to see if logging is disabled, and disable it if this is the case
 	if not config["flags"]["append_debug_log"] == True:
-		logging.basicConfig(
-			filename=f'{config["optional"]["debug_log"]}{arrow.now()}.log', 
-			encoding='utf-8', 
-			format='%(asctime)s %(levelname)-8s %(message)s',
-			level=logging.DEBUG,
-			datefmt='%Y-%m-%d %H:%M:%S')
+		errorlog = f'{config["optional"]["debug_log"]}{arrow.now()}.log'
 	else: 
-		logging.basicConfig(
-			filename=f'{config["optional"]["debug_log"]}.log', 
+		errorlog = f'{config["optional"]["debug_log"]}.log'
+	logging.basicConfig(
+			filename= errorlog, 
 			encoding='utf-8', 
 			format='%(asctime)s %(levelname)-8s %(message)s',
 			level=logging.DEBUG,
@@ -32,12 +28,19 @@ else:
 	logging.getLogger().disabled = True
 try: #Log wrapper that will record any error exceptions in the log
 	spufolder = config["required"]["ezproxy_spulog_folder"]
+	logging.debug(f'spu logfolder location: {spufolder}')
 	spu = Template(config["optional"]["spulog_name_scheme"])
 	outputfolder = config["optional"]["output_folder"]
 	brandfolder = config["branding"]["brand_folder"]
-	#TODO - look at the config spulog naming scheme and set the logfile name variable
+	prevmonth = arrow.now().shift(months=-1) #uses arrow to shift the time back a month, as all stats should be calculated from the previous month backward
+	first_month = arrow.get(1).replace(year=arrow.now().year) #load the first month in the current year
+	last_month = arrow.get(1).replace(year=arrow.now().year).shift(months=-1) #load the first month in the current year, then go back a month to account for any future change in the total number of months
+	start_mo = prevmonth.format('MM')
+	start_yr = prevmonth.format('YYYY')
+	end_mo = prevmonth.format('MM')
+	end_yr = prevmonth.format('YYYY')
+	start_end = [start_yr, start_mo, end_yr, end_mo,] #creates a default range of last month to last month, can be modified by other functions, will be expanded into a full range later in the program
 	##### Global Variables and definitions End #####
-	logging.debug(f'spu logfolder location: {spufolder}')
 	#Check folder names from config and create them if they do not exist.
 	if not os.path.exists(outputfolder):
 		os.makedirs(outputfolder)
@@ -48,46 +51,76 @@ try: #Log wrapper that will record any error exceptions in the log
 		formatter_class=argparse.RawDescriptionHelpFormatter, #lets me set the indents and returns for the help description
 		#help description, the weird symbols are ANSI escape codes that change the colors of the text
 		description='''\
-		\033[93mPlease edit the config.yml file before running the script for the first time\033[00m
+	\033[93mPlease edit the config.yml file before starting\033[00m
 
-		This script analyzes EZProxy SPU logs and has multiple modes. 
-		==============================================================
-		\033[92m*\033[00m If no arguments are specified, it will run stats for the previous month
-		\033[92m*\033[00m If only a year is specified, it will run stats for the whole year
-		\033[92m*\033[00m If only a month is specified, it will run stats for that month 
-		\033[92m*\033[00m If both a year and month are specified, it will run for the date specified. 
+	This script analyzes EZProxy SPU logs and has multiple modes. 
+	==========================================================================
+	No arguments specified = it will run stats for the previous month
+	Only a year is specified = it will run stats for the whole year
+	Only a month is specified = it will run stats for that month 
+	Both a year and month are specified = it will run for the date specified
+	A Month and Year range are specified = It will run for the range specified 
 
-	\033[91m	Corresponding SPU log file(s) must exist in the EZProxy log folder to run stats for a time period!\033[00m
+	\033[91mlog file(s) must exist in folder to run stats that range!\033[00m
 			''')
 	#listen for a year argument and use lambda and strptime to determine if it is a valid year (between 0-9999)
 	#parser.add_argument("-y", "--year", type=lambda d: datetime.strptime(d, '%Y'), help="specify a year")
-	parser.add_argument("-y", "--year", type=lambda d: arrow.get(d, 'YYYY').format('YYYY'), help="specify a year")
+	parser.add_argument(
+		"-y", "--year", 
+		nargs='+', 
+		type=lambda d: arrow.get(d, 'YYYY').format('YYYY'), #uses lambda to determine if a valid year has been input
+		help="specify a year"
+		)
 	#listen for a year argument and use lamda and strptime to determine if it is a valid month (between 1-12)
 	#parser.add_argument("-m","--month", type=lambda d: datetime.strptime(d, '%m'), help="specify a month (integer)")
-	parser.add_argument("-m","--month", type=lambda d: arrow.get(d).format('MM'), help="specify a month (integer)")
+	parser.add_argument(
+		"-m","--month", 
+		nargs='+', 
+		#type=lambda d: datetime.strptime(d, '%m') #TODO figure out how to get this working in arrow
+		help="specify a month (integer)")
 	args = parser.parse_args()
+	try:
+		if args.year or args.month:
+			if len(args.year) <= 1 and args.month == None: #checks if only one year was specified, and if no month was specified
+				start = [args.year[0], first_month.format("MM")]
+				end = [args.year[0], last_month.format("MM")]
+				start_end = [start, end]
+			elif len(args.year) == 2 and args.month == None: #checks if 2 years and no month was specified, and assigns variables correctly
+				start = f'{args.year[0]}{first_month.format("MM")}'
+				end = f'{args.year[1]}{last_month.format("MM")}'
+				start_end = [start, end]
+			elif len(args.year) <= 1 and len(args.month) <= 1: #checks if one year and one month were specified
+				start = args.year[0] + args.month[0]
+				start_end = [start] * 2
+			elif args.year == None and len(args.month) <= 1:
+				start = last_month.format("YYYY") + args.month[0]
+				end = last_month.format("YYYY") + args.month[0]
+				start_end = [start, end]
+			elif args.year == None and len(args.month) == 2:
+				start = last_month.format("YYYY") + args.month[0]
+				end = last_month.format("YYYY") + args.month[1]
+				start_end = [start, end]
+			elif len(args.year) == 2 and len(args.month) == 2:
+				start = args.year[0] + args.month[0]
+				end = args.year[1] + args.month[1]
+				start_end = [start, end]
+			elif len(args.year) >= 2 or len(args.month) >= 2:
+				logging.debug(args)
+				raise Exception('too many arguments')
+	except Exception as e: # exception code to kill the program if too many arguments are provided
+		logging.error(e)
+		raise
+	#TODO - take the start_end list, pull it's values into a full range, and then use that range to create a list of files to open
+	loadedlogfile = spu.substitute(year=start_end[0], month=start_end[1]) #uses arrow to calculate the current time, then subtract a month
+	logging.debug(f'loaded the logfile {loadedlogfile}')
+	# 	#loadedlogfile = spu.substitute(year=str(datetime.today().replace(day=1) - timedelta(days=1))[0:4], month=str(datetime.today().replace(day=1) - timedelta(days=1))[5:7])#calculates the day, then uses timedelta to move to the last day of the previous month, then I use a string index to specify just the year and month out of the timecode and seperate them into individual template values
+	# 	logging.debug(f'loaded the logfile {loadedlogfile}')
+	# 	outputfile = f"{config['optional']['output_file_prefix']}{arrow.now().shift(months=-1).format('YYYYMM')}"
+	# 	#outputfile = f'{config["optional"]["output_file_prefix"]}{str(datetime.today().replace(day=1) - timedelta(days=1))[0:7].replace("-","")}'
+	# 	logging.debug(f'set output file name to {outputfile}')
+	# 	open_files = glob.glob(os.path.join())
 
-	if (args.year and args.month):
-	    logging.debug("both year and month specified")
-	    #print(spu.substitute(year=args.year.strftime("%Y"), month=args.month.strftime("%m")))
-	    print(spu.substitute(year=args.year, month=args.month))
-	elif args.year:
-		#TODO - figure out how whole-year logfile processing will work
-		logging.debug("Year specified")
-		loadedlogfile = spu.substitute(year=args.year, month=arrow.now().shift(months=-1).month)
-		print(args.year)
-		logging.debug(f'loaded the logfile {loadedlogfile}')
-	elif args.month:
-		logging.debug("Month specified")
-		loadedlogfile = spu.substitute(year=arrow.now().shift(months=-1).year, month=args.month.strftime("%m")) #calculates the day, then uses timedelta to move to the last day of the previous month, then I use a string index to specify just the current year minus a month, and append the month from the argument
-		logging.debug(f'loaded the logfile {loadedlogfile}')
-	else:
-		logging.debug("No arguments specified")
-		#loadedlogfile = spu.substitute(year=str(datetime.today().replace(day=1) - timedelta(days=1))[0:4], month=str(datetime.today().replace(day=1) - timedelta(days=1))[5:7])#calculates the day, then uses timedelta to move to the last day of the previous month, then I use a string index to specify just the year and month out of the timecode and seperate them into individual template values
-		loadedlogfile = spu.substitute(year=arrow.now().shift(months=-1).year, month=arrow.now().shift(months=-1).month) #uses arrow to calculate the current time, then subtract a month
-		logging.debug(f'loaded the logfile {loadedlogfile}')
-		outputfile = f"{config['optional']['output_file_prefix']}{arrow.now().shift(months=-1).format('YYYYMM')}"
-		#outputfile = f'{config["optional"]["output_file_prefix"]}{str(datetime.today().replace(day=1) - timedelta(days=1))[0:7].replace("-","")}'
-		logging.debug(f'set output file name to {outputfile}')
+
 except Exception as e: #Sends any error exception to the log
     logging.error(e, exc_info=True)
+    print(f'\033[91mERROR\033[00m {e} -- Check {errorlog} for more details')
