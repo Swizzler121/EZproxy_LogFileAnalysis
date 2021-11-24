@@ -1,13 +1,15 @@
 #!/usr/bin/env python3
+import os # used for directory navigation, folder creation
 import logging #logging is used to generate a logfile
-import glob, os, argparse #os is used for directory navigation, argparse for listening for cli arguments
+import argparse #argparse for listening for cli arguments
 import yaml #yaml is used to read the config file
+import glob #used for reading and writing files
 import csv #used to open and write csv files
 from string import Template #used for templating things like the log file name.
-import arrow #using arrow for instead of datetime, date, timedelta
 from datetime import datetime #only used to interpret arguements as it handles conversion from 1 to 2 digit months better than arrow
 
-##### Global Variables and definitions Start #####
+import arrow #using arrow for instead of datetime, date, timedelta
+
 #open config file safely so it does not allow for code injection, assign it the variable config
 with open('config.yml', "r") as f:
 	config = yaml.safe_load(f)
@@ -32,15 +34,17 @@ try: #Log wrapper that will record any error exceptions in the log
 	spu = Template(config["optional"]["spulog_name_scheme"])
 	outputfolder = config["optional"]["output_folder"]
 	brandfolder = config["branding"]["brand_folder"]
-	prevmonth = arrow.now().shift(months=-1) #uses arrow to shift the time back a month, as all stats should be calculated from the previous month backward
-	first_month = arrow.get(1).replace(year=arrow.now().year) #load the first month in the current year
-	last_month = arrow.get(1).replace(year=arrow.now().year).shift(months=-1) #load the first month in the current year, then go back a month to account for any future change in the total number of months
+	#calculate the previous month
+	prevmonth = arrow.now().shift(months=-1)
+	#calculate the first month of the year
+	first_month = arrow.get(1).replace(year=arrow.now().year)
+	#calculate the last month of the year
+	last_month = arrow.get(1).replace(year=arrow.now().year).shift(months=-1) 
 	start_mo = prevmonth.format('MM')
 	start_yr = prevmonth.format('YYYY')
 	end_mo = prevmonth.format('MM')
 	end_yr = prevmonth.format('YYYY')
 	start_end = [start_yr, start_mo, end_yr, end_mo,] #creates a default range of last month to last month, can be modified by other functions, will be expanded into a full range later in the program
-	##### Global Variables and definitions End #####
 	#Check folder names from config and create them if they do not exist.
 	if not os.path.exists(outputfolder):
 		os.makedirs(outputfolder)
@@ -48,12 +52,12 @@ try: #Log wrapper that will record any error exceptions in the log
 	#Section Listens for any CLI arguments and determines mode to start in
 	logging.debug(f'Starting ArgumentParser')
 	parser = argparse.ArgumentParser(
-		formatter_class=argparse.RawDescriptionHelpFormatter, #lets me set the indents and returns for the help description
-		#help description, the weird symbols are ANSI escape codes that change the colors of the text
-		description='''\
+			formatter_class=argparse.RawDescriptionHelpFormatter, #lets me set the indents and returns for the help description
+			#help description, the weird symbols are ANSI escape codes that change the colors of the text
+			description='''\
 	\033[93mPlease edit the config.yml file before starting\033[00m
 
-	This script analyzes EZProxy SPU logs and has multiple modes. 
+	This program analyzes EZProxy SPU logs and has multiple modes. 
 	==========================================================================
 	No arguments specified = it will run stats for the previous month
 	Only a year is specified = it will run stats for the whole year
@@ -66,18 +70,17 @@ try: #Log wrapper that will record any error exceptions in the log
 	#listen for a year argument and use lambda and strptime to determine if it is a valid year (between 0-9999)
 	#parser.add_argument("-y", "--year", type=lambda d: datetime.strptime(d, '%Y'), help="specify a year")
 	parser.add_argument(
-		"-y", "--year", 
-		nargs='+', 
-		type=lambda d: arrow.get(d, 'YYYY').format('YYYY'), #uses lambda to determine if a valid year has been input
-		help="specify a year"
-		)
+			"-y", "--year", 
+			nargs='+', 
+			type=lambda d: arrow.get(d, 'YYYY').format('YYYY'), #uses lambda to determine if a valid year has been input
+			help="specify a year"		)
 	#listen for a year argument and use lamda and strptime to determine if it is a valid month (between 1-12)
 	#parser.add_argument("-m","--month", type=lambda d: datetime.strptime(d, '%m'), help="specify a month (integer)")
 	parser.add_argument(
-		"-m","--month", 
-		nargs='+', 
-		#type=lambda d: datetime.strptime(d, '%m') #TODO figure out how to get this working in arrow
-		help="specify a month (integer)")
+			"-m","--month", 
+			nargs='+', 
+			#type=lambda d: datetime.strptime(d, '%m') #TODO figure out how to get this working in arrow
+			help="specify a month (integer)")
 	args = parser.parse_args()
 	try:
 		if args.year or args.month:
