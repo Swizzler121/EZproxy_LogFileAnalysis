@@ -1,41 +1,121 @@
-required: #you locate this folder and modify this value before running the script
-  ezproxy_spulog_folder: spu_logs #location of the SPU Log folder, program must have read access to the folder.
+#########
+#GENERAL#
+#########
 
-flags: #optional flags to turn features on and off
+required:
+  # You must modify the ezproxy_spulog_folder before first run!
+  # Enter the location and name of the logfolder here, for example
+  # if I am on windows, my username is 'ben' and my log folder is 
+  # called "EZlogs" and is located in my documents folder, enter:
+  # C:\User\ben\Documents\EZlogs
+  # on the ezproxy_spulog_folder line.
+  # ezp-stats.py MUST have read access to the folder to work.
+  ezproxy_spulog_folder: spu_logs
+
+# Optional flags to turn features on and off
+flags: 
   do_debug_log: true #enable or disable a logfile being written
-  append_debug_log: true #if true, appends new logs to existing file, if false, creates a new log file each run
-  use_resource_list: false #Use a list of domains to make the resource names prettier
-  generate_charts: true #enable or disable charts in result pdf
-  do_branding: false #enable or disable branding in result pdf
-  generate_pdf: true #enable or disable the result pdf (only csv results)
-  use_logins: false #Use proxy logins in stats (currently not implimented)
+  
+  # If true, appends new logs to existing file, 
+  # If false, creates a new log file each run
+  append_debug_log: true
 
-optional: #general values that you aren't required to change before use
-  resource_list: dblist.csv #name of your domain list .csv file see github for instructions on creating this.
-  spulog_name_scheme: spu$year$month.log #future proofing in case name scheme of log changes
-  output_folder: output #folder where results will output to, will be created on run if it does not exist
-  output_file_prefix: ezpstat #prefix before date of output stat file
-  debug_log: ezp-stats #file where logs will output to, will be created on run if it does not exist
-  timezone: America/Chicago #Timezone to use, get codes from TZ Database name here: https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
+# General values that you aren't required to change before use.
+optional: 
+  # Creates a name template to generate the name of the spu log file
+  # Only edit this if the name of the spu log file has changed.
+  # valid variables are $year and $month. the rest is a string value.
+  spulog_name_scheme: spu$year$month.log
 
-##########
-#RESERVED#  -Not ready yet
-##########
+  # Folder path where results will output to. If it does not exist it 
+  # will be created on run. ezp-stats.py MUST have read and write 
+  # access to the folder to work.
+  output_folder: output
 
-branding:
-  org_name: 'Public Library' #name of your organization, used in result PDF
-  accent_color: '#00bef2' #decorates the PDF with a chosen accent color
-  brand_folder: branding #folder where logos are fetched from
-  big_logo: biglogo.png #logo that is placed on the cover of the result pdf
-  page_logo: pagelogo.png #logo that is placed on each page of the result pdf
+  # Prefix before date of the output stat file.
+  output_file_prefix: ezpstat
 
-#pages: #pages to render in result pdf and their order
-#- cover
-#- resource_usage
-#- user_stats
-#- usage_times
+  # File where logs will output to, if it does not exist and
+  # do_debug_log is true, it will be created on run of ezp-stats.py
+  debug_log: ezp-stats
+
+
+###############
+#CSV VARIABLES#
+###############
+
+# do_user pulls the user field from the log file and uses it to
+# calculate the number of unique users (in additon to IP users)
+# and also if koha_sip2 integration is enabled, you can pull fields
+# from those users for stats, like card type.
+csv_flags:
+  do_user: true # Use proxy logins in stats.
+  do_extended_dates: false # Seprates date into date, weekday, & hour.
+  do_resource_csv: false # Use a csv of URLs to match to SPU domains.
+  do_koha_integration: true # Uses koha_sip2 to pull values from koha.
+
+csv:
+  # The path to your resource csv file. 
+  # See github for instructions on creating this file.
+  resource_csv: dblist.csv
+
+# Creates a dictionary for CSV columns. The first value is the key,
+# the second is the value i.E. (KEY: VALUE). Do not edit the names
+# or the position of the keys unless the logfile has rearranged them.
+
+# It is fine to change the values as they are used to name the columns
+# in the output data and the PDF if enabled.
+columns:
+  date: Date
+  date2: Weekday
+  date3: Hour
+  user: Username # Only used if do_user is true.
+  ip_addr: Address
+  location: Location
+  req_url: Target URL
 
 #koha_sip2:
 #  address: 127.0.0.1
+#  port: 22
+#  insecure_login: false #enable to pull login details from yml file instead of credential file !NOT RECCOMENDED!
+#  credential_file: null #secure credential file only the program has access to containing your koha sip2 username and password
 #  username: null
 #  password: null
+
+###############
+#PDF VARIABLES#
+###############
+
+pdf_flags:
+  do_pdf: true # Enable or disable the result PDF.
+  do_charts: true # Enable or disable charts in result PDF.
+  do_branding: false # Enable or disable branding in result PDF.
+
+pdf_pages:
+  - cover
+
+pdf_branding:
+  # Name of your organization, used in result PDF file.
+  org_name: Public Library
+
+  # Decorates the PDF with a chosen accent colors in various places.
+  # Choose 2 colors, 1st in the list is primary and 2nd is an accent
+  # color. Colors are written in standard 6-digit color hex format.
+  accent_color: 
+    - '#00bef2'
+    - '#000000'
+
+  # Folder path where logos are fetched from. ezp-stats.py MUST have
+  # read access to the folder to work properly. 
+  brand_folder: branding 
+  
+  # Path to logo file that is placed on the cover of the result pdf. Only used
+  # if cover page is in the page list. ezp-stats.py MUST have read access to
+  # the file to work properly.
+  #TODO - set image size limits and supported filetypes
+  big_logo: biglogo.png
+  
+  # Path to logo file that is placed on each page of the result pdf.
+  # ezp-stats.py MUST have read access to the file to work properly.
+  #TODO - set image size limits and supported filetypes
+  page_logo: pagelogo.png
