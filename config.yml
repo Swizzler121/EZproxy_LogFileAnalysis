@@ -50,9 +50,10 @@ optional:
 # from those users for stats, like card type.
 csv_flags:
   do_user: true # Use proxy logins in stats.
-  do_extended_dates: false # Seprates date into date, weekday, & hour.
-  do_resource_csv: false # Use a csv of URLs to match to SPU domains.
-  do_koha_integration: true # Uses koha_sip2 to pull values from koha.
+  do_extended_dates: true # Seprates date into date, weekday, & hour.
+  do_resource_csv: true # Use a csv of URLs to match to SPU domains.
+  do_spaced_categories: true # Use spaced names in CSV categories.
+  do_koha_integration: false # Uses koha_sip2 to pull values from koha.
 
 csv:
   # The path to your resource csv file. 
@@ -66,13 +67,14 @@ csv:
 # It is fine to change the values as they are used to name the columns
 # in the output data and the PDF if enabled.
 columns:
-  date: Date
-  date2: Weekday
-  date3: Hour
-  user: Username # Only used if do_user is true.
-  ip_addr: Address
-  location: Location
-  req_url: Target URL
+  date0: Date
+  date1: Weekday
+  date2: Hour
+  usern: Username # Only used if do_user is true.
+  saddr: Source Address
+  daddr: Target Address
+  local: Location
+
 
 #koha_sip2:
 #  address: 127.0.0.1
