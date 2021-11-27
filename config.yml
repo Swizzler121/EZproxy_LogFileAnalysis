@@ -59,14 +59,32 @@ csv:
   # The path to your resource csv file. 
   # See github for instructions on creating this file.
   resource_csv: dblist.csv
+  
+  # Strips certain characters from the input string before it is passed
+  # to the rest of the interpeter. by default it is used to strip
+  # brackets from around the timestamp as it affects arrow formatting.
+  strip_elements: '[]' # Currently not working TODO
+
+  # Timestamp format given by the EZProxy SPU log. For a guide on how
+  # to create this formatting, see this page:
+  # https://arrow.readthedocs.io/en/latest/#supported-tokens
+  timestamp_format: DD/MMM/YYYY:HH:mm:ss Z
+
+#TODO - Write function that lets users re-arrange input and output columns via config.yml
+csv_in:
+  saddr: 0
+  date: [1, 3] # Currently not working TODO
+  usern: 3
+  daddr: 5
+  local: 6
 
 # Creates a dictionary for CSV columns. The first value is the key,
 # the second is the value i.E. (KEY: VALUE). Do not edit the names
-# or the position of the keys unless the logfile has rearranged them.
+# or the position of the keys.
 
 # It is fine to change the values as they are used to name the columns
 # in the output data and the PDF if enabled.
-columns:
+csv_out:
   date0: Date
   date1: Weekday
   date2: Hour
@@ -91,7 +109,7 @@ columns:
 pdf_flags:
   do_pdf: true # Enable or disable the result PDF.
   do_charts: true # Enable or disable charts in result PDF.
-  do_branding: false # Enable or disable branding in result PDF.
+  do_branding: true # Enable or disable branding in result PDF.
 
 pdf_pages:
   - cover
@@ -99,6 +117,11 @@ pdf_pages:
 pdf_branding:
   # Name of your organization, used in result PDF file.
   org_name: Public Library
+
+  pdf_title: SPU Log Stats
+
+  title_font_file: SourceSansPro-Bold.ttf
+  body_font_file: SourceSansPro-Regular.ttf
 
   # Decorates the PDF with a chosen accent colors in various places.
   # Choose 2 colors, 1st in the list is primary and 2nd is an accent
@@ -115,9 +138,9 @@ pdf_branding:
   # if cover page is in the page list. ezp-stats.py MUST have read access to
   # the file to work properly.
   #TODO - set image size limits and supported filetypes
-  big_logo: biglogo.png
+  big_logo: big_logo.png
   
   # Path to logo file that is placed on each page of the result pdf.
   # ezp-stats.py MUST have read access to the file to work properly.
   #TODO - set image size limits and supported filetypes
-  page_logo: pagelogo.png
+  page_logo: page_logo.png
