@@ -1,0 +1,4 @@
+table, td, th, tr{border-collapse:collapse; border: 1px solid #ccc}
+.dataframe{display:flex;flex-direction: column;margin-bottom:3em;}
+.dataframe thead tr, .dataframe tbody tr{display:flex;}
+.dataframe thead tr th, .dataframe tbody tr td{display:flex;flex:1;padding:.5em;}
