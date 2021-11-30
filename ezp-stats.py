@@ -365,6 +365,7 @@ try:
 
 
 	def html_unique_users():		
+		title = '<h2>Unique Sessions</h2>'
 		# Unique users table generation.
 		tdf = pd.DataFrame({
 				# Pulls in the index columns for source ips and users
@@ -374,11 +375,13 @@ try:
 				'Unique Users': [df.usern.nunique()]
 		})
 		page = tdf.to_html(index=False).replace('border="1"','border="0"')
+		html.write(title)
 		html.write(page)
 
 	#TODO - Write calendar sessions by day parsing, output via matplotlib or html, probably matplotlib?
 		
 	def html_weekly_sessions():
+		title = '<h2>Sessions by Weekday</h2>'
 		#TODO - Make columns agnostic here
 		wkdays = df.iloc[:,1]
 		days = [
@@ -396,20 +399,24 @@ try:
 		)
 		tdf = tdf.set_axis(['Weekdays','Sessions'], axis=1, inplace=False)
 		page = tdf.to_html(index=False).replace('border="1"','border="0"')
+		html.write(title)
 		html.write(page)
 
 
 	def html_sessions_hourly():
+		title = '<h2>Sessions by Hour</h2>'
 		#TODO - Make columns agnostic here
 		hour = df.iloc[:,2]
 		tdf = pd.DataFrame(df.groupby(hour).date0.count().reset_index())
 		tdf = tdf.sort_index(ascending=True)
 		tdf = tdf.set_axis(['Hour','Sessions'], axis=1, inplace=False)
 		page = tdf.to_html(index=False).replace('border="1"','border="0"')
+		html.write(title)
 		html.write(page)
 
 	
 	def html_session_location():
+		title = '<h2>Sessions by Location</h2>'
 		#TODO - Make columns agnostic here
 		loc = df.iloc[:,6]
 		tdf = pd.DataFrame(df.groupby(loc).date0.count().reset_index())
@@ -419,16 +426,19 @@ try:
 			'proxy':'Remote Session'
 		})
 		page = tdf.to_html(index=False).replace('border="1"','border="0"')
+		html.write(title)
 		html.write(page)
 
 
 	def html_requested_urls():
+		title = '<h2>Sessions by Resource</h2>'
 		#TODO - Make columns agnostic here
 		dest = df.iloc[:,5]
 		tdf = pd.DataFrame(df.groupby(dest).date0.count().reset_index())
 		tdf = tdf.sort_values(tdf.columns[1],ascending=False)
 		tdf = tdf.set_axis(['Resource','Sessions'], axis=1, inplace=False)
 		page = tdf.to_html(index=False).replace('border="1"','border="0"')
+		html.write(title)
 		html.write(page)
 
 
