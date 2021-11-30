@@ -52,7 +52,7 @@ csv_flags:
   do_user: true # Use proxy logins in stats.
   do_extended_dates: true # Seprates date into date, weekday, & hour.
   do_resource_csv: true # Use a csv of URLs to match to SPU domains.
-  do_spaced_categories: true # Use spaced names in CSV categories.
+  do_spaced_categories: false # Use spaced names in CSV categories.
   do_koha_integration: false # Uses koha_sip2 to pull values from koha.
 
 csv:
@@ -128,7 +128,7 @@ pdf_branding:
   # color. Colors are written in standard 6-digit color hex format.
   accent_color: 
     - '#00bef2'
-    - '#000000'
+    - '#2e2926'
 
   # Folder path where logos are fetched from. ezp-stats.py MUST have
   # read access to the folder to work properly. 
