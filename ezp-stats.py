@@ -11,7 +11,7 @@
 # Template is used for templating filenames.
 # datetime is only used to validate dates on arguments DELETEME
 import os
-import re
+# import re #DELETEME
 import logging
 import argparse
 import yaml
@@ -338,7 +338,7 @@ try:
 	# Begin CSV analysis with Pandas and MatPlotLib.
 
 	# Open the created CSV file in pandas.
-	branding = config["pdf_branding"]
+	branding = config["pdf_branding"] #TODO -move this
 	org_name = branding["org_name"]
 	df = pd.read_csv(output_name_csv)
 	logging.debug(f'Opened CSV as DataFrame: {output_name_csv}')
@@ -347,13 +347,23 @@ try:
 	# is the range, if it's anything else, display the start and end
 	# date range.
 	if date_r[0] == date_r[1]:
-		pdf_date = date_r[0].format("MMMM YYYY")
+		date_range = date_r[0].format("MMMM YYYY")
 	else:
-		pdf_date = (
+		date_range = (
 			date_r[0].format("MMMM YYYY")
 		  + " - "
 		  + date_r[1].format("MMMM YYYY")
 		)
+	
+	def html_head():
+		htm_cfg = config["html_settings"]
+		htm_title = f'{htm_cfg["html_title_prefix"]} - {date_range}'
+		with open(htm_cfg["html_css_template"], 'r') as file:
+			htm_css = file.read()
+		h = f'<head><title>{htm_title}</title><style>{htm_css}</style></head>'
+		html.write(h)
+
+
 	def html_unique_users():		
 		# Unique users table generation.
 		tdf = pd.DataFrame({
@@ -363,7 +373,7 @@ try:
 				'Unique IPs' : [df.saddr.nunique()],
 				'Unique Users': [df.usern.nunique()]
 		})
-		page = tdf.to_html(index=False)
+		page = tdf.to_html(index=False).replace('border="1"','border="0"')
 		html.write(page)
 
 	#TODO - Write calendar sessions by day parsing, output via matplotlib or html, probably matplotlib?
@@ -371,11 +381,22 @@ try:
 	def html_weekly_sessions():
 		#TODO - Make columns agnostic here
 		wkdays = df.iloc[:,1]
-		#plt.subplot(111)		
-		days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday']
+		days = [
+			'Sunday',
+			'Monday',
+			'Tuesday',
+			'Wednesday',
+			'Thursday',
+			'Friday',
+			'Saturday'
+		]
 		#TODO - Make columns agnostic here
-		tdf = pd.DataFrame(df.groupby(wkdays).date0.count().reindex(days).reset_index())
+		tdf = pd.DataFrame(
+			df.groupby(wkdays).date0.count().reindex(days).reset_index()
+		)
 		tdf = tdf.set_axis(['Weekdays','Sessions'], axis=1, inplace=False)
+		page = tdf.to_html(index=False).replace('border="1"','border="0"')
+		html.write(page)
 
 
 	def html_sessions_hourly():
@@ -384,7 +405,7 @@ try:
 		tdf = pd.DataFrame(df.groupby(hour).date0.count().reset_index())
 		tdf = tdf.sort_index(ascending=True)
 		tdf = tdf.set_axis(['Hour','Sessions'], axis=1, inplace=False)
-		page = tdf.to_html(index=False)
+		page = tdf.to_html(index=False).replace('border="1"','border="0"')
 		html.write(page)
 
 	
@@ -393,8 +414,11 @@ try:
 		loc = df.iloc[:,6]
 		tdf = pd.DataFrame(df.groupby(loc).date0.count().reset_index())
 		tdf = tdf.set_axis(['Location','Sessions'], axis=1, inplace=False)
-		tdf = tdf.rename(index={0:'Library Session', 1:'Remote Session'})
-		page = tdf.to_html()
+		tdf = tdf.replace(to_replace={
+			'local':'Library Session', 
+			'proxy':'Remote Session'
+		})
+		page = tdf.to_html(index=False).replace('border="1"','border="0"')
 		html.write(page)
 
 
@@ -404,12 +428,13 @@ try:
 		tdf = pd.DataFrame(df.groupby(dest).date0.count().reset_index())
 		tdf = tdf.sort_values(tdf.columns[1],ascending=False)
 		tdf = tdf.set_axis(['Resource','Sessions'], axis=1, inplace=False)
-		page = tdf.to_html(index=False)
+		page = tdf.to_html(index=False).replace('border="1"','border="0"')
 		html.write(page)
 
 
 	# Begin Writing HTML File
 	with open(output_name_html, "w") as html:
+		html_head()
 		html_unique_users()
 		html_weekly_sessions()
 		html_sessions_hourly()

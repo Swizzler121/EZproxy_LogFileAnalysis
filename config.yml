@@ -102,6 +102,20 @@ csv_out:
 #  username: null
 #  password: null
 
+################
+#HTML VARIABLES#
+################
+
+html_flags:
+  do_html: true # Enable or disable the result file. #TODO
+  do_graphics: false # Enable or disable charts in result file #TODO
+
+html_settings:
+  html_title_prefix: Public Library Stats
+  html_css_template: style.css
+
+
+
 ###############
 #PDF VARIABLES#
 ###############
