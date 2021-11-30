@@ -1,9 +1,4 @@
-login,EZproxy Login
-ebscohost-content.com,EBSCOhost
-search.ebscohost.com,EBSCOhost
-search-ebscohost.com,EBSCOhost
-searc.eb.com,EBSCOhost
-ebscohost.com,EBSCOhost
+rosetstone,Rosetta Stone
 bkflix,Book Flix
 crcro,Consumer Reports
 consumer,Consumer Reports
@@ -77,6 +72,12 @@ cph,Computer Source
 chc,Consumer Health Complete
 cro,Consumer Reports
 autorefctr,Auto Reference Center
-ezproxy1.salpublib.org,EZProxy Admin
 digital.scholastic.com,BookFlix
 ancestrylibrary.proquest.com,Ancestry Library Edition
+ebscohost-content.com,EBSCOhost
+search.ebscohost.com,EBSCOhost
+search-ebscohost.com,EBSCOhost
+search.eb.com,EBSCOhost
+ebscohost.com,EBSCOhost
+ezproxy1.salpublib.org,EZProxy Admin
+login,EZproxy Login
