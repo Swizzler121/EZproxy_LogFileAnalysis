@@ -11,6 +11,7 @@
 # Template is used for templating filenames.
 # datetime is only used to validate dates on arguments DELETEME
 import os
+import re
 import logging
 import argparse
 import yaml
@@ -20,13 +21,22 @@ from string import Template
 
 # arrow is a drop-in replacement for datetime, date, and timedelta.
 # pandas is used for data processing in data frames (PDF generation).
+# matplotlib plt is used to plot data
+# matplotlib PdfPages is used for multipage PDFs
+# matplotlib Polygon is used to draw objects
+# svgutils is used to render SVGs for PDFs
 import arrow
 import pandas as pd
-from reportlab.pdfgen import canvas
-from reportlab.pdfbase.ttfonts import TTFont
-from reportlab.pdfbase import pdfmetrics
-from reportlab.lib import colors
-from reportlab.platypus import PageBreak
+# import svgutils.compose as sc #DELETEME
+# import cairosvg #DELETEME
+import numpy as np
+# from IPython.display import HTML
+
+import matplotlib.pyplot as plt
+# from PIL import Image #DELETEME
+# from io import BytesIO #DELETEME
+# from matplotlib.backends.backend_pdf import PdfPages #DELETEME
+#from matplotlib.patches import Polygon # Might use later for drawing polygons
 
 # Open config file safely so it does not allow for code injection, and
 # assign it the variable config so it can be called later.
@@ -102,6 +112,12 @@ try:
 		help="specify a month (integer)"
 	)
 	args = parser.parse_args()
+
+	def reg_url(i):
+		remove = "?!_"
+		for c in remove:
+			i = i.replace(c,"")
+
 	try:
 		def set_stat_range(y,m):
 			# Calculate the previous month.
@@ -200,6 +216,7 @@ try:
 		])
 		output_name_csv = output_name + ".csv"
 		output_name_pdf = output_name + ".pdf"
+		output_name_html = output_name + ".html"
 	else:
 		output_name = os.path.sep.join([
 			outputfolder,
@@ -211,6 +228,7 @@ try:
 		])
 		output_name_csv = output_name + ".csv"
 		output_name_pdf = output_name + ".pdf"
+		output_name_html = output_name + ".html"
 	# Set active output file to output_name_csv (specified in config)
 	# and opens it to write.
 	output_csv = open(output_name_csv,'w')
@@ -268,9 +286,14 @@ try:
 								a, b = row
 								db_names[a] = b
 								db_list = list(db_names.keys())
+							#filter(db_reg.match, l_daddr)
+							#	db_list = list(db_names.keys())
 							for x in db_list:
 								if x in l_daddr:
 									l_daddr = db_names[x]
+							# for x in db_list:
+							# 	if x in l_daddr:
+							# 		l_daddr = db_names[x]
 					# Advances to the next row, occurs every line.
 					output_csv.write('\n')
 					# Writes one line of data to the CSV.
@@ -309,11 +332,20 @@ try:
 	write_csv_data()
 	# Closes the output CSV file.
 	output_csv.close()
+	logging.debug(f'Saved and closed CSV File: {output_name_csv}')
+
+
+	# Begin CSV analysis with Pandas and MatPlotLib.
 
 	# Open the created CSV file in pandas.
 	branding = config["pdf_branding"]
 	org_name = branding["org_name"]
-	csv_pd = pd.read_csv(output_name_csv)
+	df = pd.read_csv(output_name_csv)
+	logging.debug(f'Opened CSV as DataFrame: {output_name_csv}')
+	
+	# Checks the date range, sets a single number if only one month
+	# is the range, if it's anything else, display the start and end
+	# date range.
 	if date_r[0] == date_r[1]:
 		pdf_date = date_r[0].format("MMMM YYYY")
 	else:
@@ -322,52 +354,70 @@ try:
 		  + " - "
 		  + date_r[1].format("MMMM YYYY")
 		)
+	def html_unique_users():		
+		# Unique users table generation.
+		tdf = pd.DataFrame({
+				# Pulls in the index columns for source ips and users
+				# then only displays the count of unique values.
+				#TODO - Make columns agnostic here
+				'Unique IPs' : [df.saddr.nunique()],
+				'Unique Users': [df.usern.nunique()]
+		})
+		page = tdf.to_html(index=False)
+		html.write(page)
 
-	# Max Height 850
-	# Max Width 195
-	pdf = canvas.Canvas(output_name_pdf)
-	# pdfmetrics.registerFont(
-	# 	TTFont(
-	# 		'title-font', os.path.sep.join([
-	# 		branding["brand_folder"], 
-	# 		branding["title_font_file"]
-	# 		])
-	# 	)
-	# )
-	# pdfmetrics.registerFont(
-	# 	TTFont(
-	# 		'body-font', os.path.sep.join([ 
-	# 		branding["brand_folder"], 
-	# 		branding["body_font_file"]
-	# 		])
-	# 	)
-	# )
-	pdf.setTitle(f'{branding["pdf_title"]}  {pdf_date}')
-	def pdf_cover_page():
-		pdf.setFont("Helvetica-Bold", 36)
-		pdf.drawCentredString(300, 250, branding["pdf_title"])
-		pdf.setFont("Helvetica-Bold", 24)
-		pdf.drawCentredString(300, 150, pdf_date)
-		pdf.drawInlineImage(os.path.sep.join([
-				branding["brand_folder"],
-				branding["big_logo"]]), 100, 350
-		)
-	def pdf_base_page():
-		pdf.setFont("Helvetica-Bold", 36)
-		pdf.drawCentredString(300, 250, branding["pdf_title"])
-		pdf.setFont("Helvetica-Bold", 24)
-		pdf.drawCentredString(300, 150, pdf_date)
-		pdf.drawInlineImage(os.path.sep.join([
-				branding["brand_folder"],
-				branding["page_logo"]]), 50, 50
-		)	
-	pdf_pages = []
-	pdf_pages.append(pdf_cover_page())
-	pdf_pages.append(pdf.showPage())
-	pdf_pages.append(pdf_base_page())
+	#TODO - Write calendar sessions by day parsing, output via matplotlib or html, probably matplotlib?
+		
+	def html_weekly_sessions():
+		#TODO - Make columns agnostic here
+		wkdays = df.iloc[:,1]
+		#plt.subplot(111)		
+		days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday']
+		#TODO - Make columns agnostic here
+		tdf = pd.DataFrame(df.groupby(wkdays).date0.count().reindex(days).reset_index())
+		tdf = tdf.set_axis(['Weekdays','Sessions'], axis=1, inplace=False)
 
-	pdf.save()
 
+	def html_sessions_hourly():
+		#TODO - Make columns agnostic here
+		hour = df.iloc[:,2]
+		tdf = pd.DataFrame(df.groupby(hour).date0.count().reset_index())
+		tdf = tdf.sort_index(ascending=True)
+		tdf = tdf.set_axis(['Hour','Sessions'], axis=1, inplace=False)
+		page = tdf.to_html(index=False)
+		html.write(page)
+
+	
+	def html_session_location():
+		#TODO - Make columns agnostic here
+		loc = df.iloc[:,6]
+		tdf = pd.DataFrame(df.groupby(loc).date0.count().reset_index())
+		tdf = tdf.set_axis(['Location','Sessions'], axis=1, inplace=False)
+		tdf = tdf.rename(index={0:'Library Session', 1:'Remote Session'})
+		page = tdf.to_html()
+		html.write(page)
+
+
+	def html_requested_urls():
+		#TODO - Make columns agnostic here
+		dest = df.iloc[:,5]
+		tdf = pd.DataFrame(df.groupby(dest).date0.count().reset_index())
+		tdf = tdf.sort_values(tdf.columns[1],ascending=False)
+		tdf = tdf.set_axis(['Resource','Sessions'], axis=1, inplace=False)
+		page = tdf.to_html(index=False)
+		html.write(page)
+
+
+	# Begin Writing HTML File
+	with open(output_name_html, "w") as html:
+		html_unique_users()
+		html_weekly_sessions()
+		html_sessions_hourly()
+		html_session_location()
+		html_requested_urls()
+
+
+	logging.debug(f'Saved and closed PDF File: {output_name_html}')
 except Exception as err: # Sends any error exception to the log.
     logging.error(err, exc_info=True)
     print(f'\033[91mERROR\033[00m {err} -- Check {errorlog} for more details')
