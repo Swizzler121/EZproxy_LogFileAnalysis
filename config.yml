@@ -111,8 +111,13 @@ html_flags:
   do_graphics: false # Enable or disable charts in result file #TODO
 
 html_settings:
-  html_title_prefix: Public Library Stats
-  html_css_template: style.css
+  title_prefix: Public Library Stats
+  css_template: style.css
+  resource_col:
+    - Resource
+    - Sessions
+    - Unique Sessions
+    - Library Sessions
 
 
 

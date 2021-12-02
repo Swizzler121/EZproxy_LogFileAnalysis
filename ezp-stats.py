@@ -109,6 +109,7 @@ try:
 		"-m","--month", 
 		nargs='+', 
 		type=lambda d: arrow.get(d, 'MM').format('MM'), #TODO figure out how to convert 1 digit numbers and 3 char months into 2 digit months
+		#type=lambda d: arrow.Arrow.strptime(d, '%m'),
 		help="specify a month (integer)"
 	)
 	args = parser.parse_args()
@@ -354,11 +355,10 @@ try:
 		  + " - "
 		  + date_r[1].format("MMMM YYYY")
 		)
-	
+	htm_cfg = config["html_settings"]
 	def html_head():
-		htm_cfg = config["html_settings"]
-		htm_title = f'{htm_cfg["html_title_prefix"]} - {date_range}'
-		with open(htm_cfg["html_css_template"], 'r') as file:
+		htm_title = f'{htm_cfg["title_prefix"]} - {date_range}'
+		with open(htm_cfg["css_template"], 'r') as file:
 			htm_css = file.read()
 		h = f'<head><title>{htm_title}</title><style>{htm_css}</style></head>'
 		html.write(h)
@@ -433,11 +433,31 @@ try:
 	def html_requested_urls():
 		title = '<h2>Sessions by Resource</h2>'
 		#TODO - Make columns agnostic here
-		dest = df.iloc[:,5]
-		tdf = pd.DataFrame(df.groupby(dest).date0.count().reset_index())
-		tdf = tdf.sort_values(tdf.columns[1],ascending=False)
-		tdf = tdf.set_axis(['Resource','Sessions'], axis=1, inplace=False)
-		page = tdf.to_html(index=False).replace('border="1"','border="0"')
+		# Filter the Data Frame into a new temporary frame.
+		tdf = df.filter(['daddr','usern','local'], axis=1)
+		# Count number of sessions into a new column based on resource.
+		tdf['sess0'] = tdf['daddr'].groupby(tdf['daddr']).transform('count')
+		# Count number of unique sessions by counting unique number 
+		# of usernames in the usern column.
+		tdf['sess1'] = tdf.groupby('daddr')['usern'].transform('nunique')
+		# Count number of local sessions by creating a dictionary
+		# and using that dictionary to replace all instances of
+		# local and proxy with int values, then summing those values
+		# based on the destination address.
+		loc_dict = {"local" : 1, "proxy" : 0}
+		tdf = tdf.replace({'local': loc_dict})
+		tdf['sess2'] = tdf['local'].groupby(tdf['daddr']).transform('sum')
+		tdf['daddr'] = tdf['daddr']
+		# Copy the result dataframe into a new frame, drop the
+		# now unneeded usern and local columns, drop all duplicate
+		# rows from the frame, and resort the columns by the number 
+		# of sessions.
+		tdf2 = tdf
+		tdf2 = pd.DataFrame(tdf2).drop(columns=['usern','local'])
+		tdf2 = pd.DataFrame(tdf2).drop_duplicates().reset_index(drop=True)
+		tdf2 = tdf2.sort_values(tdf2.columns[1],ascending=False)
+		tdf2 = tdf2.set_axis(htm_cfg["resource_col"], axis=1, inplace=False)
+		page = tdf2.to_html(index=False).replace('border="1"','border="0"')
 		html.write(title)
 		html.write(page)
 
