@@ -29,7 +29,6 @@ from string import Template
 # svgutils is used to render SVGs for PDFs
 import arrow
 import pandas as pd
-from pandas.api.types import CategoricalDtype
 # import svgutils.compose as sc #DELETEME
 # import cairosvg #DELETEME
 import numpy as np
@@ -128,11 +127,6 @@ try:
 	)
 	args = parser.parse_args()
 
-	def reg_url(i):
-		remove = "?!_"
-		for c in remove:
-			i = i.replace(c,"")
-
 	try:
 		def set_stat_range(y,m):
 			# Calculate the previous month.
@@ -203,6 +197,7 @@ try:
 	# Take the start and end dates, and create a range of dates by
 	# iterating monthly from the start to the end date, then formats
 	# the dates as YYYYMM in the spu Template from the config.
+	#TODO -Turn this into a function other things can use
 	filenames = []
 	for r in arrow.Arrow.range('month', date_r[0], date_r[1]):
 		filenames.append(os.path.sep.join([
@@ -219,7 +214,21 @@ try:
 				month=r.format("MM")
 			)
 		])}''')
-	
+	#DELETEME arrow already does this
+	def expand_date_range():
+		# Set day of week order for use in functions later. 
+		wk = ['198911', '198917']
+		print(arrow.get(wk[0], 'YYYYMD').format('d'))
+		print(arrow.get(wk[1], 'YYYYMD').format('d'))
+		# days = [
+				# 'Sunday',
+				# 'Monday',
+				# 'Tuesday',
+				# 'Wednesday',
+				# 'Thursday',
+				# 'Friday',
+				# 'Saturday'
+		# ]
 	# Check if the range is only one month, and if it is, make the 
 	# date only appear once, else, use both dates.
 	if date_r[0] == date_r[1]:
@@ -392,44 +401,36 @@ try:
 	def date_fmt(x,t):
 		#TODO - Expand function funcionality to format multiple types and consolidate code from elsewhere
 		if t == 0:
-			#TODO - YYYY-MM-DD
-			print(todo)
+			ot = arrow.get(x).format('YYYY-MM-DD')
 		if t == 1:
 			ot = arrow.get(x).format('dddd')
+		# Used to convert Monday through Sunday to 1 - 7 using arrow
+		# then checks for 7 and changes it to 0 to make the sort start
+		# with Sunday instead of Monday.
 		if t == 2:
-			#TODO - Hour
-			print(todo)
+			ot = arrow.get(x).format('d')
+			ot = '0' if ot == '7' else ot
+		if t == 3:
+			ot = arrow.get(x).format('HH')
 		return ot
 	
 	def html_weekly_sessions():
 		title = '<h2>Sessions by Weekday</h2>'
 		tdf = df.filter([cl.dt0], axis=1)
+		# The following Code reindexes the week and resorts it from
+		# sunday to saturday by creating a temporary row and
+		# uses it's index to order the original dataframes output.
+		tdf['day_index'] = [date_fmt(x,2) for x in tdf[cl.dt0]]
+		tdf = tdf.sort_values('day_index')
 		tdf[cl.dt0] = [date_fmt(x,1) for x in tdf[cl.dt0]]
 		tdf['sess0'] = tdf[cl.dt0].groupby(tdf[cl.dt0]).transform('count')
 		tdf = pd.DataFrame(tdf).drop_duplicates().reset_index(drop=True)
-		# The following Code reindexes the week and resorts it from
-		# sunday to saturday by creating a temporary dataframe and
-		# uses it's index to order the original dataframes output.
-		df_days = pd.DataFrame({
-			'days':[
-				'Sunday',
-				'Monday',
-				'Tuesday',
-				'Wednesday',
-				'Thursday',
-				'Friday',
-				'Saturday'
-			]
-		})
-		df_days = df_mapping.reset_index().set_index('days')
-		tdf['day_index'] = tdf[cl.dt0].map(df_days['index'])
-		tdf = tdf.sort_values('day_index')
 		tdf = pd.DataFrame(tdf).drop(columns='day_index')
 		tdf = tdf.set_axis(['Weekdays','Sessions'], axis=1, inplace=False)
+		print(tdf)
 		page = tdf.to_html(index=False).replace('border="1"','border="0"')
 		html.write(title)
 		html.write(page)
-
 
 	def html_sessions_hourly():
 		title = '<h2>Sessions by Hour</h2>'
