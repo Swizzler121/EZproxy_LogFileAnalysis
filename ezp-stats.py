@@ -8,6 +8,7 @@
 # argparse is for listening for Command Line Interface arguments.
 # yaml is used to read the .yml config file.
 # csv is used to read and write csv files.
+# collections is used for the namedtuple function.
 # Template is used for templating filenames.
 # datetime is only used to validate dates on arguments DELETEME
 import os
@@ -16,6 +17,7 @@ import logging
 import argparse
 import yaml
 import csv
+import collections as coll
 from string import Template
 #from datetime import datetime #DELETEME
 
@@ -27,6 +29,7 @@ from string import Template
 # svgutils is used to render SVGs for PDFs
 import arrow
 import pandas as pd
+from pandas.api.types import CategoricalDtype
 # import svgutils.compose as sc #DELETEME
 # import cairosvg #DELETEME
 import numpy as np
@@ -67,6 +70,17 @@ try:
 	spu = Template(config["optional"]["spulog_name_scheme"])
 	out_file_prefix = config["optional"]["output_file_prefix"]
 	outputfolder = config["optional"]["output_folder"]
+	# Checks if spaced category names are enabled, and if so it pulls
+	# the dictionary values from the config instead of the keys.
+	if config["csv_flags"]["do_spaced_categories"] is True: 	
+		db_col_list = list(config["csv_out"].values())
+	else:
+		db_col_list = list(config["csv_out"].keys())
+	# Loads the dictionary keys and assigns them to values that will
+	# be used in DataFrame columns to allow for agnostic column calls.
+	cl_list = coll.namedtuple("cl_list", "dt0 dt1 dt2 usr sad dad loc")
+	cl = cl_list(*list(config["csv_out"].keys()))
+
 	#Check folder names from config and create them if they do not exist.
 	if not os.path.exists(outputfolder):
 		os.makedirs(outputfolder)
@@ -240,15 +254,9 @@ try:
 			config["csv_out"].pop('date1')
 			config["csv_out"].pop('date2')
 		
-		# Checks if spaced category names are enabled, and if so it pulls
-		# the dictionary values from the config instead of the keys.
-		if config["csv_flags"]["do_spaced_categories"] is True:
-			db_value_list = list(config["csv_out"].values())
-		else:
-			db_value_list = list(config["csv_out"].keys())
 		# Writes the resulting dictionary (either values or keys
 		# depending on config) to the first row of the CSV file.
-		output_csv.write(','.join(db_value_list))
+		output_csv.write(','.join(db_col_list))
 
 
 	csv_output_columns()
@@ -304,7 +312,7 @@ try:
 					#TODO - implement a way to change ouput order
 					if config["csv_flags"]["do_extended_dates"] is True:
 						output_csv.write(
-							str(l_date.format("YYYY-MM-DD"))
+							str(l_date)
 						  + ","
 						  + str(l_date.format("dddd"))
 						  + ","
@@ -370,33 +378,53 @@ try:
 		tdf = pd.DataFrame({
 				# Pulls in the index columns for source ips and users
 				# then only displays the count of unique values.
-				#TODO - Make columns agnostic here
-				'Unique IPs' : [df.saddr.nunique()],
-				'Unique Users': [df.usern.nunique()]
+				'Unique IPs' : [df[cl.sad].nunique()],
+				'Unique Users': [df[cl.usr].nunique()]
 		})
 		page = tdf.to_html(index=False).replace('border="1"','border="0"')
 		html.write(title)
 		html.write(page)
 
 	#TODO - Write calendar sessions by day parsing, output via matplotlib or html, probably matplotlib?
-		
+	
+	# Function takes an input time (x) (or multiple input times) and
+	# converts them to the specified format (t) using Arrow.
+	def date_fmt(x,t):
+		#TODO - Expand function funcionality to format multiple types and consolidate code from elsewhere
+		if t == 0:
+			#TODO - YYYY-MM-DD
+			print(todo)
+		if t == 1:
+			ot = arrow.get(x).format('dddd')
+		if t == 2:
+			#TODO - Hour
+			print(todo)
+		return ot
+	
 	def html_weekly_sessions():
 		title = '<h2>Sessions by Weekday</h2>'
-		#TODO - Make columns agnostic here
-		wkdays = df.iloc[:,1]
-		days = [
-			'Sunday',
-			'Monday',
-			'Tuesday',
-			'Wednesday',
-			'Thursday',
-			'Friday',
-			'Saturday'
-		]
-		#TODO - Make columns agnostic here
-		tdf = pd.DataFrame(
-			df.groupby(wkdays).date0.count().reindex(days).reset_index()
-		)
+		tdf = df.filter([cl.dt0], axis=1)
+		tdf[cl.dt0] = [date_fmt(x,1) for x in tdf[cl.dt0]]
+		tdf['sess0'] = tdf[cl.dt0].groupby(tdf[cl.dt0]).transform('count')
+		tdf = pd.DataFrame(tdf).drop_duplicates().reset_index(drop=True)
+		# The following Code reindexes the week and resorts it from
+		# sunday to saturday by creating a temporary dataframe and
+		# uses it's index to order the original dataframes output.
+		df_days = pd.DataFrame({
+			'days':[
+				'Sunday',
+				'Monday',
+				'Tuesday',
+				'Wednesday',
+				'Thursday',
+				'Friday',
+				'Saturday'
+			]
+		})
+		df_days = df_mapping.reset_index().set_index('days')
+		tdf['day_index'] = tdf[cl.dt0].map(df_days['index'])
+		tdf = tdf.sort_values('day_index')
+		tdf = pd.DataFrame(tdf).drop(columns='day_index')
 		tdf = tdf.set_axis(['Weekdays','Sessions'], axis=1, inplace=False)
 		page = tdf.to_html(index=False).replace('border="1"','border="0"')
 		html.write(title)
@@ -417,13 +445,16 @@ try:
 	
 	def html_session_location():
 		title = '<h2>Sessions by Location</h2>'
-		#TODO - Make columns agnostic here
-		loc = df.iloc[:,6]
-		tdf = pd.DataFrame(df.groupby(loc).date0.count().reset_index())
+		tdf = df.filter([cl.loc], axis=1)
+		#TODO - Make this happen once in the dataframe after CSV generation.
+		loc_dict = {"local" : 1, "proxy" : 0}
+		tdf = tdf.replace({cl.loc: loc_dict})
+		tdf['sess0'] = tdf.groupby(cl.loc)[cl.loc].transform('count')
+		tdf = tdf.drop_duplicates().reset_index(drop=True)
 		tdf = tdf.set_axis(['Location','Sessions'], axis=1, inplace=False)
 		tdf = tdf.replace(to_replace={
-			'local':'Library Session', 
-			'proxy':'Remote Session'
+			1:'Library Session', 
+			0:'Remote Session'
 		})
 		page = tdf.to_html(index=False).replace('border="1"','border="0"')
 		html.write(title)
@@ -432,32 +463,30 @@ try:
 
 	def html_requested_urls():
 		title = '<h2>Sessions by Resource</h2>'
-		#TODO - Make columns agnostic here
 		# Filter the Data Frame into a new temporary frame.
-		tdf = df.filter(['daddr','usern','local'], axis=1)
+		tdf = df.filter([cl.dad, cl.usr, cl.loc], axis=1)
 		# Count number of sessions into a new column based on resource.
-		tdf['sess0'] = tdf['daddr'].groupby(tdf['daddr']).transform('count')
+		tdf['sess0'] = tdf[cl.dad].groupby(tdf[cl.dad]).transform('count')
 		# Count number of unique sessions by counting unique number 
 		# of usernames in the usern column.
-		tdf['sess1'] = tdf.groupby('daddr')['usern'].transform('nunique')
+		tdf['sess1'] = tdf.groupby(cl.dad)[cl.usr].transform('nunique')
 		# Count number of local sessions by creating a dictionary
 		# and using that dictionary to replace all instances of
 		# local and proxy with int values, then summing those values
 		# based on the destination address.
+		#TODO - Make this happen once in the dataframe after CSV generation.
 		loc_dict = {"local" : 1, "proxy" : 0}
-		tdf = tdf.replace({'local': loc_dict})
-		tdf['sess2'] = tdf['local'].groupby(tdf['daddr']).transform('sum')
-		tdf['daddr'] = tdf['daddr']
+		tdf = tdf.replace({cl.loc: loc_dict})
+		tdf['sess2'] = tdf[cl.loc].groupby(tdf[cl.dad]).transform('sum')
 		# Copy the result dataframe into a new frame, drop the
 		# now unneeded usern and local columns, drop all duplicate
 		# rows from the frame, and resort the columns by the number 
 		# of sessions.
-		tdf2 = tdf
-		tdf2 = pd.DataFrame(tdf2).drop(columns=['usern','local'])
-		tdf2 = pd.DataFrame(tdf2).drop_duplicates().reset_index(drop=True)
-		tdf2 = tdf2.sort_values(tdf2.columns[1],ascending=False)
-		tdf2 = tdf2.set_axis(htm_cfg["resource_col"], axis=1, inplace=False)
-		page = tdf2.to_html(index=False).replace('border="1"','border="0"')
+		tdf = pd.DataFrame(tdf).drop(columns=[cl.usr,cl.loc])
+		tdf = pd.DataFrame(tdf).drop_duplicates().reset_index(drop=True)
+		tdf = tdf.sort_values(tdf.columns[1],ascending=False)
+		tdf = tdf.set_axis(htm_cfg["resource_col"], axis=1, inplace=False)
+		page = tdf.to_html(index=False).replace('border="1"','border="0"')
 		html.write(title)
 		html.write(page)
 
