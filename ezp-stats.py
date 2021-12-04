@@ -12,7 +12,6 @@
 # Template is used for templating filenames.
 # datetime is only used to validate dates on arguments DELETEME
 import os
-# import re #DELETEME
 import logging
 import argparse
 import yaml
@@ -29,14 +28,10 @@ from string import Template
 # svgutils is used to render SVGs for PDFs
 import arrow
 import pandas as pd
-# import svgutils.compose as sc #DELETEME
-# import cairosvg #DELETEME
 import numpy as np
 # from IPython.display import HTML
 
 import matplotlib.pyplot as plt
-# from PIL import Image #DELETEME
-# from io import BytesIO #DELETEME
 # from matplotlib.backends.backend_pdf import PdfPages #DELETEME
 #from matplotlib.patches import Polygon # Might use later for drawing polygons
 
@@ -77,7 +72,7 @@ try:
 		db_col_list = list(config["csv_out"].keys())
 	# Loads the dictionary keys and assigns them to values that will
 	# be used in DataFrame columns to allow for agnostic column calls.
-	cl_list = coll.namedtuple("cl_list", "dt0 dt1 dt2 usr sad dad loc")
+	cl_list = coll.namedtuple("cl_list", "dt0 usr sad dad loc")
 	cl = cl_list(*list(config["csv_out"].keys()))
 
 	#Check folder names from config and create them if they do not exist.
@@ -128,6 +123,28 @@ try:
 	args = parser.parse_args()
 
 	try:
+		# Function takes an input time (x) (or multiple input times) and
+		# converts them to the specified format (t) using Arrow.
+		def date_fmt(x,t):
+			#TODO - Expand function funcionality to format multiple types and consolidate code from elsewhere
+			if t == 0:
+				ot = arrow.get(x).format('YYYY-MM-DD')
+			if t == 1:
+				ot = arrow.get(x).format('dddd')
+			# Used to convert Monday through Sunday to 1 - 7 using arrow
+			# then checks for 7 and changes it to 0 to make the sort start
+			# with Sunday instead of Monday.
+			if t == 2:
+				ot = arrow.get(x).format('d')
+				ot = '0' if ot == '7' else ot
+			if t == 3:
+				ot = arrow.get(x).format('HH')
+			if t == 4:
+				ot = arrow.get(x, config["csv"]["timestamp_format"])
+			return ot
+	
+
+
 		def set_stat_range(y,m):
 			# Calculate the previous month.
 			prevmonth = arrow.now().shift(months=-1)
@@ -197,7 +214,6 @@ try:
 	# Take the start and end dates, and create a range of dates by
 	# iterating monthly from the start to the end date, then formats
 	# the dates as YYYYMM in the spu Template from the config.
-	#TODO -Turn this into a function other things can use
 	filenames = []
 	for r in arrow.Arrow.range('month', date_r[0], date_r[1]):
 		filenames.append(os.path.sep.join([
@@ -214,21 +230,7 @@ try:
 				month=r.format("MM")
 			)
 		])}''')
-	#DELETEME arrow already does this
-	def expand_date_range():
-		# Set day of week order for use in functions later. 
-		wk = ['198911', '198917']
-		print(arrow.get(wk[0], 'YYYYMD').format('d'))
-		print(arrow.get(wk[1], 'YYYYMD').format('d'))
-		# days = [
-				# 'Sunday',
-				# 'Monday',
-				# 'Tuesday',
-				# 'Wednesday',
-				# 'Thursday',
-				# 'Friday',
-				# 'Saturday'
-		# ]
+
 	# Check if the range is only one month, and if it is, make the 
 	# date only appear once, else, use both dates.
 	if date_r[0] == date_r[1]:
@@ -255,43 +257,25 @@ try:
 		output_name_html = output_name + ".html"
 	# Set active output file to output_name_csv (specified in config)
 	# and opens it to write.
-	output_csv = open(output_name_csv,'w')
-	def csv_output_columns():
-		# Checks if extended dates seprate date, weekday, and hour are
-		# enabled, if not, it deletes those keys from the dictionary.
-		if config["csv_flags"]["do_extended_dates"] is not True:
-			config["csv_out"].pop('date1')
-			config["csv_out"].pop('date2')
-		
-		# Writes the resulting dictionary (either values or keys
-		# depending on config) to the first row of the CSV file.
-		output_csv.write(','.join(db_col_list))
-
-
-	csv_output_columns()
-
-
-	def write_csv_data():
-		# Loads the logfile via filenames variable and iterates through
-		# it, assigning each line to a variable as it goes
+	#output_csv = open(output_name_csv,'w') #DELETEME ?
+	def load_log():
+		# Creates an empty pandas DataFrame, then loads the logfile
+		# via filenames variable and iterates through it, adding each
+		# line to the DataFrame as it goes.
+		global df #TODO - Find a better way to handle this
+		df = pd.DataFrame()
 		csv_in = config["csv_in"]
 		for file in filenames:
 			with open(file) as f:
-				#lines = [csv_cleanup_input(line) for line in f]
-				lines = [
-					line.strip().replace("[","").replace("]","") for line in f
-				]
+				lines = [line.strip() for line in f]
 				for line in lines:
 					l = line.split()
-					l_saddr = l[csv_in["saddr"]]
+					l_daddr = l[5]
 					l_date = arrow.get(
 						' '.join(l[1:3]), #TODO - make configurable
 						config["csv"]["timestamp_format"]
 					)
-					l_usern = l[csv_in["usern"]]
-					l_daddr = l[csv_in["daddr"]]
-					l_local = l[csv_in["local"]]
-
+					
 					# Checks if do_resource_csv is enabled, and if so
 					# loads the resource CSV file and compares each 
 					# rows url with the resource CSV and applies the
@@ -304,52 +288,21 @@ try:
 								a, b = row
 								db_names[a] = b
 								db_list = list(db_names.keys())
-							#filter(db_reg.match, l_daddr)
-							#	db_list = list(db_names.keys())
 							for x in db_list:
 								if x in l_daddr:
-									l_daddr = db_names[x]
-							# for x in db_list:
-							# 	if x in l_daddr:
-							# 		l_daddr = db_names[x]
-					# Advances to the next row, occurs every line.
-					output_csv.write('\n')
-					# Writes one line of data to the CSV.
-					# Checks if do_extended_dates is true, if so it
-					# formats the date entry 3 times to the predetermined
-					# Date types and places them in the correct column.
-					#TODO - implement a way to change ouput order
-					if config["csv_flags"]["do_extended_dates"] is True:
-						output_csv.write(
-							str(l_date)
-						  + ","
-						  + str(l_date.format("dddd"))
-						  + ","
-						  + str(l_date.format("HH"))
-						  + ","
-						  + str(l_usern)
-						  + ","
-						  + str(l_saddr)
-						  + ","
-						  + str(l_daddr)
-						  + ","
-						  + str(l_local)
-						)
-					else:
-						output_csv.write(
-							str(l_date)
-						  + ","
-						  + str(l_usern)
-						  + ","
-						  + str(l_saddr)
-						  + ","
-						  + str(l_daddr)
-						  + ","
-						  + str(l_local)
-						)
-	write_csv_data()
-	# Closes the output CSV file.
-	output_csv.close()
+									l_daddr = db_names[x]	
+					l_row = { 
+						cl.sad : l[0], 
+						cl.dt0 : l_date, 
+						cl.usr : l[3], 
+						cl.dad : l_daddr, 
+						cl.loc : l[6] 
+					}
+					df_row = pd.Series(l_row)
+					df = df.append(df_row, ignore_index=True)
+		df = df[[cl.dt0, cl.usr, cl.sad, cl.dad, cl.loc]]
+	load_log()
+	df.to_csv(output_name_csv, index=False)
 	logging.debug(f'Saved and closed CSV File: {output_name_csv}')
 
 
@@ -358,7 +311,7 @@ try:
 	# Open the created CSV file in pandas.
 	branding = config["pdf_branding"] #TODO -move this
 	org_name = branding["org_name"]
-	df = pd.read_csv(output_name_csv)
+	#df = pd.read_csv(output_name_csv)
 	logging.debug(f'Opened CSV as DataFrame: {output_name_csv}')
 	
 	# Checks the date range, sets a single number if only one month
@@ -373,6 +326,8 @@ try:
 		  + date_r[1].format("MMMM YYYY")
 		)
 	htm_cfg = config["html_settings"]
+	
+
 	def html_head():
 		htm_title = f'{htm_cfg["title_prefix"]} - {date_range}'
 		with open(htm_cfg["css_template"], 'r') as file:
@@ -396,24 +351,7 @@ try:
 
 	#TODO - Write calendar sessions by day parsing, output via matplotlib or html, probably matplotlib?
 	
-	# Function takes an input time (x) (or multiple input times) and
-	# converts them to the specified format (t) using Arrow.
-	def date_fmt(x,t):
-		#TODO - Expand function funcionality to format multiple types and consolidate code from elsewhere
-		if t == 0:
-			ot = arrow.get(x).format('YYYY-MM-DD')
-		if t == 1:
-			ot = arrow.get(x).format('dddd')
-		# Used to convert Monday through Sunday to 1 - 7 using arrow
-		# then checks for 7 and changes it to 0 to make the sort start
-		# with Sunday instead of Monday.
-		if t == 2:
-			ot = arrow.get(x).format('d')
-			ot = '0' if ot == '7' else ot
-		if t == 3:
-			ot = arrow.get(x).format('HH')
-		return ot
-	
+
 	def html_weekly_sessions():
 		title = '<h2>Sessions by Weekday</h2>'
 		tdf = df.filter([cl.dt0], axis=1)
@@ -427,17 +365,17 @@ try:
 		tdf = pd.DataFrame(tdf).drop_duplicates().reset_index(drop=True)
 		tdf = pd.DataFrame(tdf).drop(columns='day_index')
 		tdf = tdf.set_axis(['Weekdays','Sessions'], axis=1, inplace=False)
-		print(tdf)
 		page = tdf.to_html(index=False).replace('border="1"','border="0"')
 		html.write(title)
 		html.write(page)
 
 	def html_sessions_hourly():
 		title = '<h2>Sessions by Hour</h2>'
-		#TODO - Make columns agnostic here
-		hour = df.iloc[:,2]
-		tdf = pd.DataFrame(df.groupby(hour).date0.count().reset_index())
-		tdf = tdf.sort_index(ascending=True)
+		tdf = df.filter([cl.dt0], axis=1)
+		tdf[cl.dt0] = [date_fmt(x,3) for x in tdf[cl.dt0]]
+		tdf['sess0'] = tdf[cl.dt0].groupby(tdf[cl.dt0]).transform('count')
+		tdf = tdf.sort_values(cl.dt0)
+		tdf = pd.DataFrame(tdf).drop_duplicates().reset_index(drop=True)
 		tdf = tdf.set_axis(['Hour','Sessions'], axis=1, inplace=False)
 		page = tdf.to_html(index=False).replace('border="1"','border="0"')
 		html.write(title)
