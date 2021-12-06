@@ -335,15 +335,23 @@ try:
 
 	# Begin DataFrame formatting analysis with Pandas and MatPlotLib.
 
-	branding = config["pdf_branding"] #TODO -move this
-	org_name = branding["org_name"]
+	#branding = config["pdf_branding"] #TODO -move this
+	#org_name = branding["org_name"] #TODO - hook back in or DELETEME
 	htm_cfg = config["html_settings"]
 	
 
 	def html_head():
+		replacements = config["branding"]["accent_color"]
 		htm_title = f'{htm_cfg["title_prefix"]} - {date_range}'
-		with open(htm_cfg["css_template"], 'r') as file:
-			htm_css = file.read()
+		# Dumps the template CSS file into memory and checks it for 
+		# color variables to trade out.
+		lines = []
+		with open(htm_cfg["css_template"]) as file:
+			for line in file:
+				for src, target in replacements.items():
+					line = line.replace(src, target)
+				lines.append(line)
+		htm_css = ''.join([str(line) for line in lines])
 		h = f'<head><title>{htm_title}</title><style>{htm_css}</style></head>'
 		html.write(h)
 

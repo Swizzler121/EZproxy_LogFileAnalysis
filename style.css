@@ -1,10 +1,10 @@
 html{min-width:500px}
 table, td, th, tr{border-collapse:collapse;}
-table, td, th{border: 1px solid #ccc}
+table, td, th{border: 1px solid $color2}
 .dataframe{display:flex;flex-direction: column;margin-bottom:3em;max-width:1000px;}
 .dataframe thead tr, .dataframe tbody tr{display:flex;}
 .dataframe thead tr th, .dataframe tbody tr td{display:flex;flex:1;padding:.5em;}
-.calendar tr:nth-child(odd){background:#00bef2;}
+.calendar tr:nth-child(odd){background:$color1;}
 .calendar tr:nth-child(even){min-height:100px;}
 .calendar tr:nth-child(even) > td{display:block;text-align:center;padding-top:35px;}
-.calendar th{background:#ccc;}
+.calendar th{background:$color2;}

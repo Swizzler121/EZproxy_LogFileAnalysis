@@ -132,11 +132,11 @@ pdf_flags:
 pdf_pages:
   - cover
 
-pdf_branding:
+branding:
   # Name of your organization, used in result PDF file.
   org_name: Public Library
 
-  pdf_title: SPU Log Stats
+  title: SPU Log Stats
 
   title_font_file: SourceSansPro-Bold.ttf
   body_font_file: SourceSansPro-Regular.ttf
@@ -145,8 +145,8 @@ pdf_branding:
   # Choose 2 colors, 1st in the list is primary and 2nd is an accent
   # color. Colors are written in standard 6-digit color hex format.
   accent_color: 
-    - '#00bef2'
-    - '#2e2926'
+    $color1: '#00bef2'
+    $color2: '#2e2926'
 
   # Folder path where logos are fetched from. ezp-stats.py MUST have
   # read access to the folder to work properly. 
