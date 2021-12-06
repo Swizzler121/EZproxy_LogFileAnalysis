@@ -10,15 +10,17 @@
 # csv is used to read and write csv files.
 # collections is used for the namedtuple function.
 # Template is used for templating filenames.
-# datetime is only used to validate dates on arguments DELETEME
+# datetime is used to count the week number starting on sunday and 
+# validate dates on arguments # NOT CURRENTLY
 import os
 import logging
 import argparse
 import yaml
 import csv
+import calendar as cd
 import collections as coll
 from string import Template
-#from datetime import datetime #DELETEME
+from datetime import datetime
 
 # arrow is a drop-in replacement for datetime, date, and timedelta.
 # pandas is used for data processing in data frames (PDF generation).
@@ -126,9 +128,8 @@ try:
 		# Function takes an input time (x) (or multiple input times) and
 		# converts them to the specified format (t) using Arrow.
 		def date_fmt(x,t):
-			#TODO - Expand function funcionality to format multiple types and consolidate code from elsewhere
 			if t == 0:
-				ot = arrow.get(x).format('YYYY-MM-DD')
+				ot = arrow.get(x) # Formats to arrow standard.
 			if t == 1:
 				ot = arrow.get(x).format('dddd')
 			# Used to convert Monday through Sunday to 1 - 7 using arrow
@@ -140,10 +141,21 @@ try:
 			if t == 3:
 				ot = arrow.get(x).format('HH')
 			if t == 4:
-				ot = arrow.get(x, config["csv"]["timestamp_format"])
+				ot = arrow.get(x).format('YYYY-MM-DD')
+			if t == 5:
+				ot = arrow.get(x).format('ddd')
+			if t == 6:
+				ot = arrow.get(x).strftime("%U")
+			if t == 7:
+				ot = arrow.get(x).format('MM')
 			return ot
 	
 
+		def input_range(x,y):
+			start = arrow.get(x)
+			end = arrow.get(y)
+
+			return (end - start).days
 
 		def set_stat_range(y,m):
 			# Calculate the previous month.
@@ -211,11 +223,28 @@ try:
 	except ValueError as err:
 		logging.error(err)
 		raise
+	
+
+	# Checks the date range, sets a single number if only one month
+	# is the range, if it's anything else, display the start and end
+	# date range.
+	if date_r[0] == date_r[1]:
+		date_range = date_r[0].format("MMMM YYYY")
+	else:
+		date_range = (
+			date_r[0].format("MMMM YYYY")
+		  + " - "
+		  + date_r[1].format("MMMM YYYY")
+		)
+
+
 	# Take the start and end dates, and create a range of dates by
 	# iterating monthly from the start to the end date, then formats
 	# the dates as YYYYMM in the spu Template from the config.
+	date_list = []
 	filenames = []
 	for r in arrow.Arrow.range('month', date_r[0], date_r[1]):
+		date_list.append(r)
 		filenames.append(os.path.sep.join([
 			spufolder, 
 			spu.substitute(
@@ -231,38 +260,31 @@ try:
 			)
 		])}''')
 
-	# Check if the range is only one month, and if it is, make the 
-	# date only appear once, else, use both dates.
-	if date_r[0] == date_r[1]:
-		output_name = os.path.sep.join([
-			outputfolder,
-			out_file_prefix
-		  + "_"
-		  + date_r[0].format("YYYYMM")
-		])
-		output_name_csv = output_name + ".csv"
-		output_name_pdf = output_name + ".pdf"
-		output_name_html = output_name + ".html"
-	else:
-		output_name = os.path.sep.join([
-			outputfolder,
-			out_file_prefix
-		  + "_"
-		  + date_r[0].format("YYYYMM")
-		  + "_"
-		  + date_r[1].format("YYYYMM")
-		])
-		output_name_csv = output_name + ".csv"
-		output_name_pdf = output_name + ".pdf"
-		output_name_html = output_name + ".html"
-	# Set active output file to output_name_csv (specified in config)
-	# and opens it to write.
-	#output_csv = open(output_name_csv,'w') #DELETEME ?
+	def output_file(t):
+		# Check if the range is only one month, and if it is, make the 
+		# date only appear once, else, use both dates.
+		if date_r[0] == date_r[1]:
+			output_name = os.path.sep.join([
+				outputfolder,
+				out_file_prefix
+			  + "_"
+			  + date_r[0].format("YYYYMM")
+			])
+		else:
+			output_name = os.path.sep.join([
+				outputfolder,
+				out_file_prefix
+			  + "_"
+			  + date_r[0].format("YYYYMM")
+			  + "_"
+			  + date_r[1].format("YYYYMM")
+			])
+		return output_name + "." + t
+
 	def load_log():
 		# Creates an empty pandas DataFrame, then loads the logfile
 		# via filenames variable and iterates through it, adding each
 		# line to the DataFrame as it goes.
-		global df #TODO - Find a better way to handle this
 		df = pd.DataFrame()
 		csv_in = config["csv_in"]
 		for file in filenames:
@@ -270,7 +292,7 @@ try:
 				lines = [line.strip() for line in f]
 				for line in lines:
 					l = line.split()
-					l_daddr = l[5]
+					l_daddr = l[csv_in["daddr"]]
 					l_date = arrow.get(
 						' '.join(l[1:3]), #TODO - make configurable
 						config["csv"]["timestamp_format"]
@@ -292,39 +314,29 @@ try:
 								if x in l_daddr:
 									l_daddr = db_names[x]	
 					l_row = { 
-						cl.sad : l[0], 
+						cl.sad : l[csv_in["saddr"]], 
 						cl.dt0 : l_date, 
-						cl.usr : l[3], 
+						cl.usr : l[csv_in["usern"]], 
 						cl.dad : l_daddr, 
-						cl.loc : l[6] 
+						cl.loc : l[csv_in["local"]] 
 					}
 					df_row = pd.Series(l_row)
 					df = df.append(df_row, ignore_index=True)
 		df = df[[cl.dt0, cl.usr, cl.sad, cl.dad, cl.loc]]
-	load_log()
-	df.to_csv(output_name_csv, index=False)
-	logging.debug(f'Saved and closed CSV File: {output_name_csv}')
+		logging.debug(f'Loaded logfiles into DataFrame')
+		return df
+	df = load_log()
+	df.to_csv(output_file('csv'), index=False)
+	logging.debug(f'Saved CSV File')
 
+	#TODO - Somehow flag unknown so it can be investigated
+	loc_dict = {"local" : 1, "proxy" : 0, "unknown" : 0}
+	df = df.replace({cl.loc: loc_dict})
 
-	# Begin CSV analysis with Pandas and MatPlotLib.
+	# Begin DataFrame formatting analysis with Pandas and MatPlotLib.
 
-	# Open the created CSV file in pandas.
 	branding = config["pdf_branding"] #TODO -move this
 	org_name = branding["org_name"]
-	#df = pd.read_csv(output_name_csv)
-	logging.debug(f'Opened CSV as DataFrame: {output_name_csv}')
-	
-	# Checks the date range, sets a single number if only one month
-	# is the range, if it's anything else, display the start and end
-	# date range.
-	if date_r[0] == date_r[1]:
-		date_range = date_r[0].format("MMMM YYYY")
-	else:
-		date_range = (
-			date_r[0].format("MMMM YYYY")
-		  + " - "
-		  + date_r[1].format("MMMM YYYY")
-		)
 	htm_cfg = config["html_settings"]
 	
 
@@ -349,8 +361,74 @@ try:
 		html.write(title)
 		html.write(page)
 
-	#TODO - Write calendar sessions by day parsing, output via matplotlib or html, probably matplotlib?
 	
+	# This function recieves a month from the date_list variable and
+	# parses it into number of sessions per day organized into a
+	# traditional calendar layout. It uses a combination of the arrow,
+	# calendar, and datetime libraries for various calcuations.
+	def html_session_cal(r):
+		m = arrow.get(r).format('MM')
+		y = arrow.get(r).format('YYYY')
+		month = arrow.get(m,'MM').format('MMMM')
+		start = arrow.get(r).floor('month')
+		w_start = date_fmt(start,6)
+		end = arrow.get(r).ceil('month')
+		w_line = w_start
+		w_end = date_fmt(end,6)
+		title = f'<h2>Sessions by Day - {month} {y}</h2>'
+		cd.setfirstweekday(cd.SUNDAY)
+		week = cd.weekheader(3).split()
+		cdf = pd.DataFrame(columns=week)
+		tdf = df.filter([cl.dt0], axis=1)
+		tdf['date1'] = [date_fmt(x,4) for x in tdf[cl.dt0]]
+		tdf['date2'] = [date_fmt(x,7) for x in tdf['date1']]
+		tdf['wkday'] = [date_fmt(x,5) for x in tdf[cl.dt0]]
+		tdf['sess0'] = tdf['date1'].groupby(tdf['date1']).transform('count')
+		tdf['wknum'] = [date_fmt(x,6) for x in tdf['date1']]
+		tdf = pd.DataFrame(tdf).drop(columns=cl.dt0)
+		tdf = pd.DataFrame(tdf).drop_duplicates().reset_index(drop=True)
+		m_mask = (tdf['date2'] == arrow.get(m, 'MM').format('MM'))	
+		tdf = tdf.loc[m_mask]
+		tdf = pd.DataFrame(tdf.drop(columns='date2'))
+		
+		# This for loop divides the month into one week and iterates
+		# through the data week by week. it uses a mask to mask the
+		# data by week number, and filters it into a dict, then
+		# merges that dict with the placeholder blank dict. It then
+		# advances the week number as long as its not already at the
+		# last week of the month.
+		for i in cd.monthcalendar(int(y), int(m)):
+			w_mask = tdf['wknum'] == str(w_line)
+			week_list = pd.Series(i, index=cdf.columns)
+			cdf = cdf.append(week_list, ignore_index=True)
+			cdf = cdf.replace({0 : ''})
+			val_list = {
+				'Sun' : '', 
+				'Mon' : '', 
+				'Tue' : '', 
+				'Wed' : '', 
+				'Thu' : '', 
+				'Fri' : '', 
+				'Sat' : ''
+			}
+			wdf = tdf.loc[w_mask]
+			wdf = pd.DataFrame(wdf).drop(columns=['date1','wknum'])
+			w_list = wdf.set_index('wkday').transpose().to_dict(orient='list')
+			w_list = {k: str(v[0]) for k,v in w_list.items()}
+			if int(w_line) < int(w_end):
+				w_line = int(w_line) + 1
+			val_list.update(w_list)
+			cdf = cdf.append(val_list, ignore_index=True)
+		page = cdf.to_html(
+			index=False,
+			classes='calendar'
+		).replace(
+			'border="1"',
+			'border="0"'
+		)
+		html.write(title)
+		html.write(page)
+
 
 	def html_weekly_sessions():
 		title = '<h2>Sessions by Weekday</h2>'
@@ -386,8 +464,8 @@ try:
 		title = '<h2>Sessions by Location</h2>'
 		tdf = df.filter([cl.loc], axis=1)
 		#TODO - Make this happen once in the dataframe after CSV generation.
-		loc_dict = {"local" : 1, "proxy" : 0}
-		tdf = tdf.replace({cl.loc: loc_dict})
+		#loc_dict = {"local" : 1, "proxy" : 0}
+		#tdf = tdf.replace({cl.loc: loc_dict})
 		tdf['sess0'] = tdf.groupby(cl.loc)[cl.loc].transform('count')
 		tdf = tdf.drop_duplicates().reset_index(drop=True)
 		tdf = tdf.set_axis(['Location','Sessions'], axis=1, inplace=False)
@@ -414,8 +492,8 @@ try:
 		# local and proxy with int values, then summing those values
 		# based on the destination address.
 		#TODO - Make this happen once in the dataframe after CSV generation.
-		loc_dict = {"local" : 1, "proxy" : 0}
-		tdf = tdf.replace({cl.loc: loc_dict})
+		#loc_dict = {"local" : 1, "proxy" : 0}
+		#tdf = tdf.replace({cl.loc: loc_dict})
 		tdf['sess2'] = tdf[cl.loc].groupby(tdf[cl.dad]).transform('sum')
 		# Copy the result dataframe into a new frame, drop the
 		# now unneeded usern and local columns, drop all duplicate
@@ -431,16 +509,25 @@ try:
 
 
 	# Begin Writing HTML File
-	with open(output_name_html, "w") as html:
+	logging.debug(f'Begin Writing HTML File')
+	with open(output_file('html'), "w") as html:
 		html_head()
 		html_unique_users()
+		# Checks if the date range is greater than ~6 months, if so,
+		# it uses the function to show sessions by month instead of
+		# sessions by day.
+		if input_range(date_r[0],date_r[1]) > 182:
+			print('TODO - Write sessions by month function')
+		else:
+			for m in date_list:
+				html_session_cal(m)
 		html_weekly_sessions()
 		html_sessions_hourly()
 		html_session_location()
 		html_requested_urls()
 
 
-	logging.debug(f'Saved and closed PDF File: {output_name_html}')
+	logging.debug(f'Saved and closed HTML File')
 except Exception as err: # Sends any error exception to the log.
     logging.error(err, exc_info=True)
     print(f'\033[91mERROR\033[00m {err} -- Check {errorlog} for more details')
