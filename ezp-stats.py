@@ -20,7 +20,7 @@ import csv
 import calendar as cd
 import collections as coll
 from string import Template
-from datetime import datetime
+#from datetime import datetime
 
 # arrow is a drop-in replacement for datetime, date, and timedelta.
 # pandas is used for data processing in data frames (PDF generation).
@@ -118,6 +118,7 @@ try:
 	parser.add_argument(
 		"-m","--month", 
 		nargs='+', 
+		#type=lambda d: arrow.Arrow.strptime(d, '%m').datetime,
 		type=lambda d: arrow.get(d, 'MM').format('MM'), #TODO figure out how to convert 1 digit numbers and 3 char months into 2 digit months
 		#type=lambda d: arrow.Arrow.strptime(d, '%m'),
 		help="specify a month (integer)"
@@ -145,9 +146,15 @@ try:
 			if t == 5:
 				ot = arrow.get(x).format('ddd')
 			if t == 6:
-				ot = arrow.get(x).strftime("%U")
+				ot = arrow.get(x).strftime("%y%U")
 			if t == 7:
 				ot = arrow.get(x).format('MM')
+			if t == 8:
+				ot = arrow.get(x).format('MMMM')
+			if t == 9:
+				ot = arrow.get(x).format('YYYY')
+			if t == 10:
+				ot = arrow.get(x).format('YYYYMM')
 			return ot
 	
 
@@ -379,10 +386,8 @@ try:
 		y = arrow.get(r).format('YYYY')
 		month = arrow.get(m,'MM').format('MMMM')
 		start = arrow.get(r).floor('month')
-		w_start = date_fmt(start,6)
 		end = arrow.get(r).ceil('month')
-		w_line = w_start
-		w_end = date_fmt(end,6)
+		w_line = date_fmt(start,6)
 		title = f'<h2>Sessions by Day - {month} {y}</h2>'
 		cd.setfirstweekday(cd.SUNDAY)
 		week = cd.weekheader(3).split()
@@ -423,7 +428,7 @@ try:
 			wdf = pd.DataFrame(wdf).drop(columns=['date1','wknum'])
 			w_list = wdf.set_index('wkday').transpose().to_dict(orient='list')
 			w_list = {k: str(v[0]) for k,v in w_list.items()}
-			if int(w_line) < int(w_end):
+			if int(w_line) < int(date_fmt(end,6)):
 				w_line = int(w_line) + 1
 			val_list.update(w_list)
 			cdf = cdf.append(val_list, ignore_index=True)
@@ -434,6 +439,23 @@ try:
 			'border="1"',
 			'border="0"'
 		)
+		html.write(title)
+		html.write(page)
+
+
+	def html_session_month(y):
+		title = f'<h2>Sessions by Month - {y}</h2>'
+		tdf = df.filter([cl.dt0], axis=1)
+		tdf['Month'] = [date_fmt(x,8) for x in tdf[cl.dt0]]
+		tdf['year_month'] = [date_fmt(x,10) for x in tdf[cl.dt0]]
+		tdf['Sessions'] = tdf['year_month'].groupby(tdf['year_month']).transform('count')
+		tdf['year'] = [date_fmt(x,9) for x in tdf[cl.dt0]]
+		tdf = pd.DataFrame(tdf).drop(columns=[cl.dt0,'year_month'])
+		tdf = pd.DataFrame(tdf).drop_duplicates().reset_index(drop=True)
+		y_mask = tdf['year'] == str(y)
+		ydf = tdf.loc[y_mask]
+		ydf = pd.DataFrame(ydf).drop(columns='year')
+		page = ydf.to_html(index=False).replace('border="1"','border="0"')
 		html.write(title)
 		html.write(page)
 
@@ -525,7 +547,9 @@ try:
 		# it uses the function to show sessions by month instead of
 		# sessions by day.
 		if input_range(date_r[0],date_r[1]) > 182:
-			print('TODO - Write sessions by month function')
+			for y in args.year:	
+				html_session_month(y)
+			html_session_cal(date_list[-1])
 		else:
 			for m in date_list:
 				html_session_cal(m)
