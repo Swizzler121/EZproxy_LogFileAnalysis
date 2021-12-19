@@ -96,6 +96,7 @@ try:
 	==========================================================================
 	No arguments specified = it will run stats for the previous month
 	Only a year is specified = it will run stats for the whole year
+	Only the year flag given = it will run stats for the whole previous year
 	Only a month is specified = it will run stats for that month 
 	Both a year and month are specified = it will run for the date specified
 	A Month and Year range are specified = It will run for the range specified 
@@ -107,7 +108,7 @@ try:
 	#parser.add_argument("-y", "--year", type=lambda d: datetime.strptime(d, '%Y'), help="specify a year") #DELETEME
 	parser.add_argument(
 		"-y", "--year", 
-		nargs='+', 
+		nargs='*', 
 		# Uses lambda to determine if a valid year has been input.
 		type=lambda d: arrow.get(d, 'YYYY').format('YYYY'),
 		help="specify a year"		
@@ -168,7 +169,8 @@ try:
 			# Calculate the previous month.
 			prevmonth = arrow.now().shift(months=-1)
 			# Calculate the first month of the year.
-			first_month = arrow.get(1).replace(year=arrow.now().year)
+			first_month = arrow.get(1).replace(year=arrow.now().year
+			).shift(years=-1)
 			# Calculate the last month of the year.
 			last_month = arrow.get(1).replace(
 				year=arrow.now().year
@@ -181,9 +183,14 @@ try:
 			# and if no months were specified.
 			if y is not None and m is None:
 				if len(y) <= 1 and m is None: 
-					s = arrow.get(first_month).replace(year=int(y[0]))
-					e = arrow.get(last_month).replace(year=int(y[0]))
-					start_end = [s, e]
+					if y == []:
+						start_end = [first_month, last_month]
+						print(start_end)
+					else:
+						s = arrow.get(first_month).replace(year=int(y[0]))
+						e = arrow.get(last_month).replace(year=int(y[0]))
+						start_end = [s, e]
+						print(start_end)
 				elif len(y) == 2 and m is None: 
 					s = arrow.get(first_month).replace(year=int(y[0]))
 					e = arrow.get(last_month).replace(year=int(y[1]))
