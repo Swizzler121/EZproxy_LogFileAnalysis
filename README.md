@@ -13,8 +13,8 @@ Code4Lib article: https://journal.code4lib.org/articles/13918
 4. Download the latest archive from the releases page.
 5. Extract the script and related files into the directory we just created.
 6. Install the required dependancies
-	- Open Command Prompt, Powershell, or Powershell core and navigate to the directory we created, E.g. `cd C:\Users\{username}\ezp-stats\`
-	- Run the following command: `pip install -r requirements.txt` This command will download the required dependencies via the Python Package Installer. Make sure you are currently in the directory with the requirements.txt file or this command will fail.
+	- Open Command Prompt, Powershell, or Powershell core as an administrator (install may fail when running as standard user) and navigate to the directory we created, E.g. `cd C:\Users\{username}\ezp-stats\`
+	- Run the following command: `pip install -r requirements.txt`  as Administrator. This command will download the required dependencies via the Python Package Installer. Make sure you are currently in the directory with the requirements.txt file or this command will fail. I've had numpy wheels fail to compile when using 3.10, but we do not use that dependancy, so this is fine.
 
 **Linux via Archive**
 1. Check for python 3, install if needed.
