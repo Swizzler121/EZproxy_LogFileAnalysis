@@ -14,4 +14,4 @@ PROCESS_ID=$!
 echo "waiting for script to finish"
 wait $PROCESS_ID
 echo "sending mail"
-echo "" | mutt -s $SUBJECT_LN -a  /home/ezproxy/ezpstats/output/ezpstat_$LAST_MONTH_YEARDAY.html
+echo "" | mutt -s $SUBJECT_LN $DEST_EMAIL -a  /home/ezproxy/ezpstats/output/ezpstat_$LAST_MONTH_YEARDAY.html
