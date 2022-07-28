@@ -1,9 +1,17 @@
 #!/bin/sh
 
-#variables to use correct command
-LAST_MONTH=`date -d "$(date +%Y-%m-1) -1 month" +%-m`
-THIS_MONTH=`date -d "$(date +%Y-%m-1) 0 month" +%-m`
+#Static Variables
+LAST_MONTH_NAME=`date -d "$(date +%Y-%m-1) -1 month" +%B`
+LAST_MONTH_YEARDAY=`date -d "$(date +%Y-%m-1) -1 month" +%Y%m`
 
-echo "delay test" 
-wait 600
-echo "it's been 10 minutes"
+#User Editable Variables
+DEST_EMAIL="example@example.com"
+SUBJECT_LN="EZProxy Stats" $LAST_MONTH_NAME
+
+#Program
+python /home/ezproxy/ezpstats/ezp-stats.py &
+PROCESS_ID=$!
+echo "waiting for script to finish"
+wait $PROCESS_ID
+echo "sending mail"
+echo "" | mutt -s $SUBJECT_LN -a  /home/ezproxy/ezpstats/output/ezpstat_$LAST_MONTH_YEARDAY.html
