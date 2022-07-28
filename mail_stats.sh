@@ -4,7 +4,10 @@
 ##Static Variables##
 ####################
 LAST_MONTH_NAME=`date -d "$(date +%Y-%m-1) -1 month" +%B`
-LAST_MONTH_YEARDAY=`date -d "$(date +%Y-%m-1) -1 month" +%Y%m`
+LAST_MONTH_YYYYMM=`date -d "$(date +%Y-%m-1) -1 month" +%Y%m`
+LAST_MONTH_MM=`date -d "$(date +%Y-%m-1) -1 month" +%m`
+LAST_MONTH_YYYY=`date -d "$(date +%Y-%m-1) -1 month" +%Y`
+LAST_MONTH_YY=`date -d "$(date +%Y-%m-1) -1 month" +%y`
 
 ###########################
 ##User Editable Variables##
@@ -16,7 +19,7 @@ DEST_EMAIL="example@example.com"
 SUBJECT_PF="EZProxy Stats"
 
 #EZP-stats ouput folder/file location
-OUTPUT_LOC="/home/ezproxy/ezpstats/output/ezpstat_$LAST_MONTH_YEARDAY.html"
+OUTPUT_LOC="/home/ezproxy/ezpstats/output/ezpstat_$LAST_MONTH_YYYYMM.html"
 
 #Program
 python3 /home/ezproxy/ezpstats/ezp-stats.py &
