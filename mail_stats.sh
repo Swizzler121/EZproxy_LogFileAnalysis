@@ -52,7 +52,7 @@ PROCESS_ID=$!
 #Waiting for script to finish
 wait $PROCESS_ID
 #Sending mail
-if [ "RICH_EML" = true ] ; then
+if [ $RICH_EML = true ] ; then
     echo "" \
         | mutt -e "$TYPE" -s "$SUBJECT $MONTH_NAME" $DEST -a $OUTPUT < $OUTPUT
 else
