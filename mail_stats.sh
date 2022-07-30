@@ -36,7 +36,7 @@ DEST="example@example.com"
 SUBJECT="EZProxy Stats"
 
 # EZP-stats ouput folder/file location
-OUTPUT="/home/ezproxy/ezpstats/OUTPUTput/ezpstat_$MONTH_YYYYMM.html"
+OUTPUT="/home/ezproxy/ezpstats/output/ezpstat_$MONTH_YYYYMM.html"
 SCRIPT_LOC="/home/ezproxy/ezpstats/ezp-stats.py"
 
 # HTML Rich Email
