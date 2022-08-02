@@ -54,9 +54,7 @@ PROCESS_ID=$!
 wait $PROCESS_ID
 #Sending mail
 if [ $RICH_EML = true ] ; then
-    echo "" \
-        | $PROG -e "$TYPE" -s "$SUBJECT $MONTH_NAME" $DEST -a $OUTPUT < $OUTPUT
+    $PROG -e "$TYPE" -s "$SUBJECT $MONTH_NAME" $DEST -a $OUTPUT < $OUTPUT
 else
-    echo "" \
-        | $PROG -s "$SUBJECT $MONTH_NAME" $DEST -a $OUTPUT
+    $PROG -s "$SUBJECT $MONTH_NAME" $DEST -a $OUTPUT
 fi
