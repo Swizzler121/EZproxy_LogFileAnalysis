@@ -111,7 +111,7 @@ html_flags:
 
 html_settings:
   title_prefix: Public Library Stats
-  css_template: style.css
+  css_template: email.css
   resource_col:
     - Resource
     - Sessions

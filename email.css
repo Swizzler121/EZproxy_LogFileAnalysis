@@ -1,0 +1,7 @@
+html{min-width:500px}
+table, td, th, tr{border-collapse:collapse;}
+table, td, th{border: 1px solid $color2}
+.calendar tr:nth-child(odd){background:$color1;}
+.calendar tr:nth-child(even){min-height:100px;}
+.calendar tr:nth-child(even) > td{display:block;text-align:center;padding-top:35px;}
+.calendar th{background:$color2;}

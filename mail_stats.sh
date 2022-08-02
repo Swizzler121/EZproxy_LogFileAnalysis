@@ -23,6 +23,7 @@ MONTH_MM=`date -d "$(date +%Y-%m-1) -1 month" +%m`
 MONTH_YYYY=`date -d "$(date +%Y-%m-1) -1 month" +%Y`
 MONTH_YY=`date -d "$(date +%Y-%m-1) -1 month" +%y`
 TYPE="set content_type=text/html"
+PROG="/usr/bin/mutt"
 
 #############################
 ## User Editable Variables ##
@@ -54,8 +55,8 @@ wait $PROCESS_ID
 #Sending mail
 if [ $RICH_EML = true ] ; then
     echo "" \
-        | mutt -e "$TYPE" -s "$SUBJECT $MONTH_NAME" $DEST -a $OUTPUT < $OUTPUT
+        | $PROG -e "$TYPE" -s "$SUBJECT $MONTH_NAME" $DEST -a $OUTPUT < $OUTPUT
 else
     echo "" \
-        | mutt -s "$SUBJECT $MONTH_NAME" $DEST -a $OUTPUT
+        | $PROG -s "$SUBJECT $MONTH_NAME" $DEST -a $OUTPUT
 fi
