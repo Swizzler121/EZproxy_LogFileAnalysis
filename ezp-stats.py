@@ -28,6 +28,7 @@ from string import Template
 # matplotlib PdfPages is used for multipage PDFs
 # matplotlib Polygon is used to draw objects
 # svgutils is used to render SVGs for PDFs
+# is numpy used? possible #DELETEME
 import arrow
 import pandas as pd
 import numpy as np
