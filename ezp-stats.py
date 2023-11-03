@@ -31,10 +31,10 @@ from string import Template
 # is numpy used? possible #DELETEME
 import arrow
 import pandas as pd
-import numpy as np
+# import numpy as np
 # from IPython.display import HTML
 
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 # from matplotlib.backends.backend_pdf import PdfPages #DELETEME
 #from matplotlib.patches import Polygon # Might use later for drawing polygons
 

@@ -122,8 +122,13 @@ html_settings:
 #UPDATE VARIABLES#
 ##################
 
+# Versioning is structured as follows:
+# [Python version].[build date YYYYMMDD]
+# Python version just shows what it's tested for, might run on newer versions.
+# Running on newer Python versions than version listed is not reccomended.
+
 update:
-  version: "20231021r1"
+  version: "3.11.20231101"
 
 ###############
 #PDF VARIABLES#
