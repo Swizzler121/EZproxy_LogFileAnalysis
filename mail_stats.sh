@@ -39,6 +39,8 @@ SUBJECT="EZProxy Stats"
 # EZP-stats ouput folder/file location
 OUTPUT="/home/ezproxy/ezpstats/output/ezpstat_$MONTH_YYYYMM.html"
 SCRIPT_LOC="/home/ezproxy/ezpstats/ezp-stats.py"
+# Python venv path
+VENV_LOC="/home/ezproxy/ezpstats/env/bin/activate"
 
 # HTML Rich Email
 RICH_EML=true
@@ -48,6 +50,8 @@ RICH_EML=true
 ############
 # You shouldn't need to edit beyond this point unless something breaks.
 
+set -e
+. $VENV_LOC
 python3 $SCRIPT_LOC &
 PROCESS_ID=$!
 #Waiting for script to finish
